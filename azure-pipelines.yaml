@@ -2,6 +2,9 @@ pool:
   name: Azure Pipelines
   vmImage: 'ubuntu-latest'
 
+variables:
+  AWS.Region: 'us-east-1'
+
 steps:
 - task: CloudFormationCreateOrUpdateStack@1
   displayName: 'Create Stack: VPC for EKS Cluster'
