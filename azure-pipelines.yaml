@@ -7,17 +7,17 @@ variables:
 
 steps:
 - task: CloudFormationCreateOrUpdateStack@1
-  displayName: 'Create Stack: VPC for EKS Cluster'
+  displayName: 'Create Stack: EKS VPC'
   inputs:
     awsCredentials: 'CodeFuller @ AWS'
-    stackName: 'vpc-for-eks'
+    stackName: 'eks-vpc'
     templateSource: 'file'
-    templateFile: 'vpc-for-eks.yaml'
+    templateFile: 'eks-vpc.yaml'
 
 - task: CloudFormationCreateOrUpdateStack@1
   displayName: 'Create Stack: EKS Cluster Role'
   inputs:
     awsCredentials: 'CodeFuller @ AWS'
-    stackName: 'eksClusterRole'
+    stackName: 'eks-cluster-role'
     templateSource: 'file'
     templateFile: 'eks-cluster-role.yaml'
