@@ -1,0 +1,21 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: EKS Cluster
+
+Parameters:
+  RoleArn:
+    Type: String
+    AllowedPattern: ^arn:aws:iam:.*$
+    Description: ARN of IAM role which will be used for creation of cluster resources
+
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Subnets IDs in the VPC
+
+Resources:
+  EKSCluster:
+    Type: 'AWS::EKS::Cluster'
+    Properties:
+      Version: '1.19'
+      RoleArn: !Ref RoleArn
+      ResourcesVpcConfig:
+        SubnetIds: !Ref SubnetIds
