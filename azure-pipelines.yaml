@@ -1,9 +1,17 @@
 pool:
   name: Azure Pipelines
 steps:
-- task: AmazonWebServices.aws-vsts-tools.CloudFormationCreateOrUpdateStack.CloudFormationCreateOrUpdateStack@1
+- task: CloudFormationCreateOrUpdateStack@1
   displayName: 'Create Stack: VPC for EKS Cluster'
   inputs:
     awsCredentials: 'CodeFuller @ AWS'
     stackName: 'vpc-for-eks'
+    templateSource: 'file'
     templateFile: 'vpc-for-eks.yaml'
+- task: CloudFormationCreateOrUpdateStack@1
+  displayName: 'Create Stack: EKS Cluster Role'
+  inputs:
+    awsCredentials: 'CodeFuller @ AWS'
+    stackName: 'eksClusterRole'
+    templateSource: 'file'
+    templateFile: 'eks-cluster-role.yaml'
