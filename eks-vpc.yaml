@@ -4,7 +4,6 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: VPC for EKS cluster
 
 Parameters:
-
   VpcBlock:
     Type: String
     Default: 192.168.0.0/16
@@ -35,7 +34,7 @@ Metadata:
     ParameterGroups:
       -
         Label:
-          default: "Worker Network Configuration"
+          default: Worker Network Configuration
         Parameters:
           - VpcBlock
           - PublicSubnet01Block
@@ -55,10 +54,10 @@ Resources:
         Value: !Sub '${AWS::StackName}-VPC'
 
   InternetGateway:
-    Type: "AWS::EC2::InternetGateway"
+    Type: AWS::EC2::InternetGateway
 
   VPCGatewayAttachment:
-    Type: "AWS::EC2::VPCGatewayAttachment"
+    Type: AWS::EC2::VPCGatewayAttachment
     Properties:
       InternetGatewayId: !Ref InternetGateway
       VpcId: !Ref VPC
@@ -274,7 +273,6 @@ Resources:
       VpcId: !Ref VPC
 
 Outputs:
-
   SubnetIds:
     Description: Subnets IDs in the VPC
     Value: !Join [ ",", [ !Ref PublicSubnet01, !Ref PublicSubnet02, !Ref PrivateSubnet01, !Ref PrivateSubnet02 ] ]
