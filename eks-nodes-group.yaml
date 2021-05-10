@@ -1,0 +1,88 @@
+# Source: Based on https://docs.aws.amazon.com/eks/latest/userguide/getting-started-console.html#managed-nodes-%E2%80%93-linux
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Managed Node Group for EKS Cluster
+
+Parameters:
+  ClusterName:
+    Type: String
+    Description: Name of EKS Cluster
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Subnets IDs in the VPC
+  OIDCProviderId:
+    Type: String
+    Description: Id of the cluster's OIDC provider, e.g. 'oidc.eks.us-east-1.amazonaws.com/id/9FA874BC9A6D27673BDA5B90FC0F4705'
+  SSHKey:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: SSH Key for Nodes EC2 Instances
+
+Resources:
+  EKSCNIRole:
+    Type: AWS::IAM::Role
+    Description: IAM Role for VPC CNI Plugin for Kubernetes
+    Properties:
+      # https://github.com/aws/amazon-eks-pod-identity-webhook/issues/30#issuecomment-605553411
+      AssumeRolePolicyDocument: !Sub
+        - |
+          {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Principal": {
+                        "Federated": "${IamOIDCProviderArn}"
+                    },
+                    "Action": "sts:AssumeRoleWithWebIdentity",
+                    "Condition": {
+                        "StringEquals": {
+                            "${OIDCProviderEndpoint}:sub": "system:serviceaccount:kube-system:aws-node"
+                        }
+                    }
+                }
+            ]
+          }
+        - {
+            "IamOIDCProviderArn": { "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:oidc-provider/${OIDCProviderId}" },
+            "OIDCProviderEndpoint": { "Ref": "OIDCProviderId" }
+          }
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+
+  EKSCNIAddon:
+    Type: AWS::EKS::Addon
+    Description: VPC CNI Plugin for EKS Cluster
+    Properties:
+      AddonName: vpc-cni
+      ClusterName: !Ref ClusterName
+      ServiceAccountRoleArn: !GetAtt EKSCNIRole.Arn
+
+  EKSNodeRole:
+    Type: AWS::IAM::Role
+    Description: IAM Role for EKS Nodes
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: ec2.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+
+  EKSNodegroup:
+    Type: AWS::EKS::Nodegroup
+    Properties:
+      ClusterName: !Ref ClusterName
+      NodeRole: !GetAtt EKSNodeRole.Arn
+      InstanceTypes:
+        - t3.small
+      ScalingConfig:
+        DesiredSize: 2
+        MinSize: 2
+        MaxSize: 2
+      RemoteAccess:
+        Ec2SshKey: !Ref SSHKey
+      Subnets: !Ref SubnetIds
