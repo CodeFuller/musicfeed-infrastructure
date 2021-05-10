@@ -35,6 +35,6 @@ Resources:
 
 Outputs:
 
-  OpenIdConnectProviderId:
-    Description: Id of the cluster's OIDC identity provider, e.g. 'oidc.eks.us-east-1.amazonaws.com/id/9FA874BC9A6D27673BDA5B90FC0F4705'
+  OIDCProviderId:
+    Description: Id of the cluster's OIDC provider, e.g. 'oidc.eks.us-east-1.amazonaws.com/id/9FA874BC9A6D27673BDA5B90FC0F4705'
     Value: !Select [1, !Split ["//", !GetAtt EKSCluster.OpenIdConnectIssuerUrl]]
