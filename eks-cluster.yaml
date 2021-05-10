@@ -19,3 +19,22 @@ Resources:
       RoleArn: !Ref RoleArn
       ResourcesVpcConfig:
         SubnetIds: !Ref SubnetIds
+
+  OIDCProvider:
+    Type: AWS::IAM::OIDCProvider
+    Properties:
+      ClientIdList:
+        - sts.amazonaws.com
+      ThumbprintList:
+        # This is thumbprint valid for https://oidc.eks.us-east-1.amazonaws.com
+        # It was copied from https://console.aws.amazon.com/iamv2/home?#/identity_providers/create
+        # Automatic calculation of thumbprin is not trivial and requires execution of OpenSSL command line tool.
+        # The algorithm is described at: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc_verify-thumbprint.html
+        - 9e99a48a9960b14926bb7f3b02e22da2b0ab7280
+      Url: !GetAtt EKSCluster.OpenIdConnectIssuerUrl
+
+Outputs:
+
+  OpenIdConnectProviderId:
+    Description: Id of the cluster's OIDC identity provider, e.g. 'oidc.eks.us-east-1.amazonaws.com/id/9FA874BC9A6D27673BDA5B90FC0F4705'
+    Value: !Select [1, !Split ["//", !GetAtt EKSCluster.OpenIdConnectIssuerUrl]]
