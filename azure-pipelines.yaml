@@ -4,6 +4,7 @@ pool:
 
 variables:
   AWS.Region: 'us-east-1'
+  SSHKey: 'MusicFeed Key'
 
 steps:
 - task: CloudFormationCreateOrUpdateStack@1
@@ -38,3 +39,20 @@ steps:
        ParameterValue: '$(RoleArn)'
      - ParameterKey: SubnetIds
        ParameterValue: '$(SubnetIds)'
+
+- task: CloudFormationCreateOrUpdateStack@1
+  displayName: 'Create Stack: EKS Nodes Group'
+  inputs:
+    awsCredentials: 'CodeFuller @ AWS'
+    stackName: 'eks-nodes-group'
+    templateFile: 'eks-nodes-group.yaml'
+    templateParametersSource: inline
+    templateParameters: |
+     - ParameterKey: ClusterName
+       ParameterValue: '$(ClusterName)'
+     - ParameterKey: SubnetIds
+       ParameterValue: '$(SubnetIds)'
+     - ParameterKey: OIDCProviderId
+       ParameterValue: '$(OIDCProviderId)'
+     - ParameterKey: SSHKey
+       ParameterValue: '$(SSHKey)'
