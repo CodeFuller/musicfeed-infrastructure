@@ -39,6 +39,8 @@ steps:
        ParameterValue: '$(RoleArn)'
      - ParameterKey: SubnetIds
        ParameterValue: '$(SubnetIds)'
+    captureStackOutputs: asVariables
+    captureAsSecuredVars: false
 
 - task: CloudFormationCreateOrUpdateStack@1
   displayName: 'Create Stack: EKS Nodes Group'
