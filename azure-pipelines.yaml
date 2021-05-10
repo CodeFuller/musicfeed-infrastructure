@@ -18,16 +18,6 @@ steps:
     captureAsSecuredVars: false
 
 - task: CloudFormationCreateOrUpdateStack@1
-  displayName: 'Create Stack: EKS Cluster Role'
-  inputs:
-    awsCredentials: 'CodeFuller @ AWS'
-    stackName: 'eks-cluster-role'
-    templateSource: 'file'
-    templateFile: 'eks-cluster-role.yaml'
-    captureStackOutputs: asVariables
-    captureAsSecuredVars: false
-
-- task: CloudFormationCreateOrUpdateStack@1
   displayName: 'Create Stack: EKS Cluster'
   inputs:
     awsCredentials: 'CodeFuller @ AWS'
@@ -35,8 +25,6 @@ steps:
     templateFile: 'eks-cluster.yaml'
     templateParametersSource: inline
     templateParameters: |
-     - ParameterKey: RoleArn
-       ParameterValue: '$(RoleArn)'
      - ParameterKey: SubnetIds
        ParameterValue: '$(SubnetIds)'
     captureStackOutputs: asVariables
