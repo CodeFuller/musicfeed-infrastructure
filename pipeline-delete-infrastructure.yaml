@@ -1,0 +1,26 @@
+pool:
+  name: Azure Pipelines
+  vmImage: ubuntu-latest
+
+variables:
+  AWS.Region: us-east-1
+  AWS.Credentials: CodeFuller @ AWS
+
+steps:
+- task: CloudFormationDeleteStack@1
+  displayName: 'Delete Stack: EKS Nodes Group'
+  inputs:
+    awsCredentials: $(AWS.Credentials)
+    stackName: eks-nodes-group
+
+- task: CloudFormationDeleteStack@1
+  displayName: 'Delete Stack: EKS Cluster'
+  inputs:
+    awsCredentials: $(AWS.Credentials)
+    stackName: eks-cluster
+
+- task: CloudFormationDeleteStack@1
+  displayName: 'Delete Stack: EKS VPC'
+  inputs:
+    awsCredentials: $(AWS.Credentials)
+    stackName: eks-vpc
