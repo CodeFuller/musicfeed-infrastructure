@@ -10,6 +10,12 @@ variables:
 
 steps:
 - task: CloudFormationDeleteStack@1
+  displayName: 'Delete Stack: IAM Role for EKS ALB Controller'
+  inputs:
+    awsCredentials: $(AWS.Credentials)
+    stackName: eks-alb-controller-role
+
+- task: CloudFormationDeleteStack@1
   displayName: 'Delete Stack: EKS Nodes Group'
   inputs:
     awsCredentials: $(AWS.Credentials)

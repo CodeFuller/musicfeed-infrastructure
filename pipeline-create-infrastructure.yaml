@@ -47,3 +47,14 @@ steps:
        ParameterValue: '$(OIDCProviderId)'
      - ParameterKey: SSHKey
        ParameterValue: '$(SSHKey)'
+
+- task: CloudFormationCreateOrUpdateStack@1
+  displayName: 'Create Stack: IAM Role for EKS ALB Controller'
+  inputs:
+    awsCredentials: $(AWS.Credentials)
+    stackName: eks-alb-controller-role
+    templateFile: eks-alb-controller-role.yaml
+    templateParametersSource: inline
+    templateParameters: |
+     - ParameterKey: OIDCProviderId
+       ParameterValue: '$(OIDCProviderId)'
