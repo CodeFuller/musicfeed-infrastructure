@@ -3,15 +3,15 @@ pool:
   vmImage: ubuntu-latest
 
 variables:
-  AWS.Region: us-east-1
-  AWS.Credentials: CodeFuller @ AWS
-  SSHKey: MusicFeed Key
+  aws.region: us-east-1
+  aws.credentials: CodeFuller @ AWS
+  sshKey: MusicFeed Key
 
 steps:
 - task: CloudFormationCreateOrUpdateStack@1
   displayName: 'Create Stack: EKS VPC'
   inputs:
-    awsCredentials: $(AWS.Credentials)
+    awsCredentials: $(aws.credentials)
     stackName: eks-vpc
     templateSource: file
     templateFile: eks-vpc.yaml
@@ -21,7 +21,7 @@ steps:
 - task: CloudFormationCreateOrUpdateStack@1
   displayName: 'Create Stack: EKS Cluster'
   inputs:
-    awsCredentials: $(AWS.Credentials)
+    awsCredentials: $(aws.credentials)
     stackName: eks-cluster
     templateFile: eks-cluster.yaml
     templateParametersSource: inline
@@ -34,7 +34,7 @@ steps:
 - task: CloudFormationCreateOrUpdateStack@1
   displayName: 'Create Stack: EKS Nodes Group'
   inputs:
-    awsCredentials: $(AWS.Credentials)
+    awsCredentials: $(aws.credentials)
     stackName: eks-nodes-group
     templateFile: eks-nodes-group.yaml
     templateParametersSource: inline
@@ -46,15 +46,23 @@ steps:
      - ParameterKey: OIDCProviderId
        ParameterValue: '$(OIDCProviderId)'
      - ParameterKey: SSHKey
-       ParameterValue: '$(SSHKey)'
+       ParameterValue: '$(sshKey)'
 
 - task: CloudFormationCreateOrUpdateStack@1
   displayName: 'Create Stack: IAM Role for EKS ALB Controller'
   inputs:
-    awsCredentials: $(AWS.Credentials)
+    awsCredentials: $(aws.credentials)
     stackName: eks-alb-controller-role
     templateFile: eks-alb-controller-role.yaml
     templateParametersSource: inline
     templateParameters: |
      - ParameterKey: OIDCProviderId
        ParameterValue: '$(OIDCProviderId)'
+
+- task: PowerShell@2
+  displayName: 'Create EKS Service Connection'
+  inputs:
+    targetType: filePath
+    filePath: ./pipelines/create-eks-service-connection.ps1
+    arguments: '-PersonalToken $(ApiPersonalToken) -Organization "CodeFuller" -ProjectId $(System.TeamProjectId) -ProjectName $(System.TeamProject) -ClusterName $(ClusterName)'
+    failOnStderr: true
