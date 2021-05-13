@@ -64,5 +64,5 @@ steps:
   inputs:
     targetType: filePath
     filePath: ./pipelines/create-eks-service-connection.ps1
-    arguments: '-PersonalToken $(ApiPersonalToken) -Organization "CodeFuller" -ProjectId $(System.TeamProjectId) -ProjectName $(System.TeamProject) -ClusterName $(ClusterName)'
+    arguments: '-PersonalToken $(ApiPersonalToken) -OrganizationUrl $(System.CollectionUri) -ProjectId $(System.TeamProjectId) -ProjectName $(System.TeamProject) -ClusterName $(ClusterName)'
     failOnStderr: true

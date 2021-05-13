@@ -11,7 +11,7 @@ $ConnectionName = "AWS EKS - $ClusterName"
 $AuthenicationHeader = @{Authorization = 'Basic ' + [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(":$($PersonalToken)")) }
 
 Write-Host "Loading existing service connections ..."
-$ApiUrl = "$OrganizationUrl/$ProjectName/_apis/serviceendpoint/endpoints?api-version=6.1-preview.4"
+$ApiUrl = "${OrganizationUrl}${ProjectName}/_apis/serviceendpoint/endpoints?api-version=6.1-preview.4"
 $Result = Invoke-RestMethod -Method "Get" -Uri $ApiUrl -Headers $AuthenicationHeader
 $ExistingConnections = $Result.Value | Where-Object { $_.Type -eq "kubernetes" -and $_.Name -eq $ConnectionName }
 if ($ExistingConnections) {
@@ -91,7 +91,7 @@ $RequestBody = @{
     )
 }
 
-$ApiUrl = "$OrganizationUrl/_apis/serviceendpoint/endpoints?api-version=6.1-preview.4"
+$ApiUrl = "${OrganizationUrl}_apis/serviceendpoint/endpoints?api-version=6.1-preview.4"
 
 Write-Host "Creating service connection '$ConnectionName' ..."
 Invoke-RestMethod -Method "Post" -Uri $ApiUrl -Headers $AuthenicationHeader -Body ($RequestBody | ConvertTo-Json -Depth 3) -ContentType "application/json"
