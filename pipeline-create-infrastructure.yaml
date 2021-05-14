@@ -1,6 +1,7 @@
 pool:
   name: Azure Pipelines
-  vmImage: ubuntu-latest
+  # Windows is required for AWSPowerShellModuleScript@1 task
+  vmImage: vs2017-win2016
 
 variables:
   aws.region: us-east-1
