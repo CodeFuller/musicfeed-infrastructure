@@ -22,7 +22,7 @@ if ($ExistingConnections) {
 Write-Host "Service connection '$ConnectionName' does not exist and will be created"
 
 Write-Host "Configuring kubectl ..."
-& aws eks update-kubeconfig --region us-east-1 --name $ClusterName
+& aws eks update-kubeconfig --name $ClusterName
 if (-not $?) {
     Write-Error "Failed to configure kubectl"
     exit 1

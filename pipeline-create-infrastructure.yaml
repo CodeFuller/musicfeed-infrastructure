@@ -59,10 +59,10 @@ steps:
      - ParameterKey: OIDCProviderId
        ParameterValue: '$(OIDCProviderId)'
 
-- task: PowerShell@2
+- task: AWSPowerShellModuleScript@1
   displayName: 'Create EKS Service Connection'
   inputs:
-    targetType: filePath
+    awsCredentials: $(aws.credentials)
     filePath: ./pipelines/create-eks-service-connection.ps1
     arguments: '-PersonalToken $(ApiPersonalToken) -OrganizationUrl $(System.CollectionUri) -ProjectId $(System.TeamProjectId) -ProjectName $(System.TeamProject) -ClusterName $(ClusterName)'
     failOnStderr: true
