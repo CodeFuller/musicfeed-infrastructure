@@ -64,6 +64,7 @@ steps:
   displayName: 'Create EKS Service Connection'
   inputs:
     awsCredentials: $(aws.credentials)
-    filePath: ./pipelines/create-eks-service-connection.ps1
+    workingDirectory: ./pipelines
+    filePath: create-eks-service-connection.ps1
     arguments: '-PersonalToken $(ApiPersonalToken) -OrganizationUrl $(System.CollectionUri) -ProjectId $(System.TeamProjectId) -ProjectName $(System.TeamProject) -ClusterName $(ClusterName)'
     failOnStderr: true
