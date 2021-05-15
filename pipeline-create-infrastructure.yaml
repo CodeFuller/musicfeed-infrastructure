@@ -70,6 +70,8 @@ stages:
         templateParameters: |
          - ParameterKey: OIDCProviderId
            ParameterValue: '$(OIDCProviderId)'
+        captureStackOutputs: asVariables
+        captureAsSecuredVars: false
 
     - task: AWSPowerShellModuleScript@1
       displayName: 'Configure EKS Service Connection'
