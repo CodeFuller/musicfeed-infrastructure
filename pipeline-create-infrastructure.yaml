@@ -100,6 +100,7 @@ stages:
     variables: 
       ClusterName: $[ stageDependencies.CreateClusterStage.CreateClusterJob.outputs['SetOutputVariables.ClusterName'] ]
       EKSLoadBalancerControllerRoleArn: $[ stageDependencies.CreateClusterStage.CreateClusterJob.outputs['SetOutputVariables.EKSLoadBalancerControllerRoleArn'] ]
+      Namespace: musicfeed
     steps:
     - task: Kubernetes@1
       displayName: 'Install TargetGroupBinding CRDS'
@@ -138,3 +139,11 @@ stages:
         kubernetesServiceEndpoint: $(KubernetesConnectionName)
         command: apply
         arguments: -f namespace.yaml
+
+    - task: Kubernetes@1
+      displayName: Create Ingress
+      inputs:
+        kubernetesServiceEndpoint: $(KubernetesConnectionName)
+        command: apply
+        namespace: $(Namespace)
+        arguments: -f ingress.yaml
