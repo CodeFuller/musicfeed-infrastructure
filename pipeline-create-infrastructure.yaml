@@ -6,6 +6,7 @@ pool:
 variables:
   aws.region: us-east-1
   aws.credentials: CodeFuller @ AWS
+  kubernetesConnectionName: AWS EKS Cluster
   sshKey: MusicFeed Key
 
 steps:
@@ -72,6 +73,6 @@ steps:
 - task: Kubernetes@1
   displayName: 'Install TargetGroupBinding CRDS'
   inputs:
-    kubernetesServiceEndpoint: $(KubernetesConnectionName)
+    kubernetesServiceEndpoint: $(kubernetesConnectionName)
     command: apply
     arguments: '-k "github.com/aws/eks-charts/stable/aws-load-balancer-controller//crds?ref=master"'
