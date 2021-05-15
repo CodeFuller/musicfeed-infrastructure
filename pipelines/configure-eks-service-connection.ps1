@@ -7,7 +7,6 @@ param (
 )
 
 $ConnectionName = "AWS EKS Cluster"
-Write-Host "##vso[task.setvariable variable=KubernetesConnectionName;isSecret=false]$ConnectionName"
 
 $AuthenicationHeader = @{Authorization = 'Basic ' + [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(":$($PersonalToken)")) }
 
@@ -39,7 +38,7 @@ if (-not $?) {
 Write-Host "Creating pipelines service account ..."
 & kubectl apply -f pipelines-service-account.yaml
 if (-not $?) {
-    Write-Error "Failed to configure create pipelines service account"
+    Write-Error "Failed to create pipelines service account"
     exit 1
 }
 
