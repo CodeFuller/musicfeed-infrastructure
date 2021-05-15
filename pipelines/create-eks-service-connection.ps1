@@ -6,21 +6,28 @@ param (
     [Parameter(mandatory)] $ClusterName
 )
 
-$ConnectionName = "AWS EKS - $ClusterName"
+$ConnectionName = "AWS EKS Cluster"
 Write-Host "##vso[task.setvariable variable=KubernetesConnectionName;isSecret=false]$ConnectionName"
 
 $AuthenicationHeader = @{Authorization = 'Basic ' + [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(":$($PersonalToken)")) }
 
-Write-Host "Loading existing service connections ..."
+Write-Host "Loading service connections ..."
 $ApiUrl = "${OrganizationUrl}${ProjectName}/_apis/serviceendpoint/endpoints?api-version=6.1-preview.4"
 $Result = Invoke-RestMethod -Method "Get" -Uri $ApiUrl -Headers $AuthenicationHeader
 $ExistingConnections = $Result.Value | Where-Object { $_.Type -eq "kubernetes" -and $_.Name -eq $ConnectionName }
-if ($ExistingConnections) {
-    Write-Host "Service connection '$ConnectionName' already exists, exiting ..."
-    exit 0
+if ($null -eq $ExistingConnections)
+{
+    Write-Error "Service connection '$ConnectionName' does not exist"
+    exit 1
 }
 
-Write-Host "Service connection '$ConnectionName' does not exist and will be created"
+if ($ExistingConnections -is [array])
+{
+    Write-Error "Multiple service connections '$ConnectionName' exist"
+    exit 1
+}
+
+$ConnectionId = $ExistingConnections.id
 
 Write-Host "Configuring kubectl ..."
 & aws eks update-kubeconfig --name $ClusterName
@@ -92,13 +99,13 @@ $RequestBody = @{
     )
 }
 
-$ApiUrl = "${OrganizationUrl}_apis/serviceendpoint/endpoints?api-version=6.1-preview.4"
+$ApiUrl = "${OrganizationUrl}_apis/serviceendpoint/endpoints/{$ConnectionId}?api-version=6.1-preview.4"
 
-Write-Host "Creating service connection '$ConnectionName' ..."
-Invoke-RestMethod -Method "Post" -Uri $ApiUrl -Headers $AuthenicationHeader -Body ($RequestBody | ConvertTo-Json -Depth 3) -ContentType "application/json"
+Write-Host "Updating service connection '$ConnectionName' ..."
+Invoke-RestMethod -Method "Put" -Uri $ApiUrl -Headers $AuthenicationHeader -Body ($RequestBody | ConvertTo-Json -Depth 3) -ContentType "application/json"
 if (-not $?) {
-    Write-Error "Failed to create service connection"
+    Write-Error "Failed to update service connection"
     exit 1
 }
 
-Write-Host "Service connection '$ConnectionName' was created successfully"
+Write-Host "Service connection '$ConnectionName' was updated successfully"
