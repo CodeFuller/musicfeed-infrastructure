@@ -131,3 +131,10 @@ stages:
          serviceAccount.create=true
          serviceAccount.name=aws-load-balancer-controller
          serviceAccount.annotations."eks\.amazonaws\.com/role-arn"="$(EKSLoadBalancerControllerRoleArn)"
+
+    - task: Kubernetes@1
+      displayName: Create Namespace
+      inputs:
+        kubernetesServiceEndpoint: $(KubernetesConnectionName)
+        command: apply
+        arguments: -f namespace.yaml
