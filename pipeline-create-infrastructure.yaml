@@ -96,3 +96,26 @@ stages:
         command: apply
         arguments: '-k "github.com/aws/eks-charts/stable/aws-load-balancer-controller//crds?ref=master"'
         outputFormat: none
+
+    - task: HelmDeploy@0
+      displayName: Add eks-charts Repository
+      inputs:
+        connectionType: Kubernetes Service Connection
+        kubernetesServiceConnection: $(KubernetesConnectionName)
+        command: repo
+        arguments: add eks https://aws.github.io/eks-charts
+
+    - task: HelmDeploy@0
+      displayName: Install ALB Controller
+      inputs:
+        connectionType: Kubernetes Service Connection
+        kubernetesServiceConnection: $(KubernetesConnectionName)
+        namespace: kube-system
+        command: upgrade
+        chartName: eks/aws-load-balancer-controller
+        releaseName: aws-load-balancer-controller
+        overrideValues: |
+         clusterName=$(ClusterName)
+         serviceAccount.create=true
+         serviceAccount.name=aws-load-balancer-controller
+         serviceAccount.annotations."eks\.amazonaws\.com/role-arn"="$(EKSLoadBalancerControllerRoleArn)"
