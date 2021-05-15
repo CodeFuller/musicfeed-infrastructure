@@ -68,3 +68,10 @@ steps:
     filePath: ./pipelines/create-eks-service-connection.ps1
     arguments: '-PersonalToken $(ApiPersonalToken) -OrganizationUrl $(System.CollectionUri) -ProjectId $(System.TeamProjectId) -ProjectName $(System.TeamProject) -ClusterName $(ClusterName)'
     failOnStderr: true
+
+- task: Kubernetes@1
+  displayName: 'Install TargetGroupBinding CRDS'
+  inputs:
+    kubernetesServiceEndpoint: $(KubernetesConnectionName)
+    command: apply
+    arguments: '-k "github.com/aws/eks-charts/stable/aws-load-balancer-controller//crds?ref=master"'

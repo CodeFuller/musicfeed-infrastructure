@@ -7,6 +7,7 @@ param (
 )
 
 $ConnectionName = "AWS EKS - $ClusterName"
+Write-Host "##vso[task.setvariable variable=KubernetesConnectionName;isSecret=false]$ConnectionName"
 
 $AuthenicationHeader = @{Authorization = 'Basic ' + [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(":$($PersonalToken)")) }
 
