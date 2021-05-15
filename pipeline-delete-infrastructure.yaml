@@ -9,6 +9,25 @@ variables:
   AWS.Credentials: CodeFuller @ AWS
 
 steps:
+- task: AWSPowerShellModuleScript@1
+  displayName: 'Load EKS Cluster Name'
+  inputs:
+    awsCredentials: 'CodeFuller @ AWS'
+    scriptType: inline
+    inlineScript: |
+     Write-Host "Loading cluster name ..."
+     $ClusterName = aws cloudformation describe-stacks --stack-name eks-cluster --query "Stacks[0].Outputs[?OutputKey=='ClusterName'].OutputValue" --output text
+     Write-Host "Loaded cluster name '$ClsuterName'"
+     Write-Host "##vso[task.setvariable variable=ClusterName;isSecret=false]$ClusterName"
+
+- task: PowerShell@2
+  displayName: 'Delete EKS Service Connection'
+  inputs:
+    targetType: filePath
+    filePath: ./pipelines/delete-eks-service-connection.ps1
+    arguments: '-PersonalToken $(ApiPersonalToken) -OrganizationUrl $(System.CollectionUri) -ProjectId $(System.TeamProjectId) -ProjectName $(System.TeamProject) -ClusterName $(ClusterName)'
+    failOnStderr: true
+
 - task: CloudFormationDeleteStack@1
   displayName: 'Delete Stack: IAM Role for EKS ALB Controller'
   inputs:
