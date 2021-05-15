@@ -139,6 +139,7 @@ stages:
         kubernetesServiceEndpoint: $(KubernetesConnectionName)
         command: apply
         arguments: -f namespace.yaml
+        outputFormat: none
 
     - task: Kubernetes@1
       displayName: Create Ingress
@@ -147,3 +148,4 @@ stages:
         command: apply
         namespace: $(Namespace)
         arguments: -f ingress.yaml
+        outputFormat: none
