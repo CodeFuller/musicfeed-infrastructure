@@ -9,70 +9,90 @@ variables:
   kubernetesConnectionName: AWS EKS Cluster
   sshKey: MusicFeed Key
 
-steps:
-- task: CloudFormationCreateOrUpdateStack@1
-  displayName: 'Create Stack: EKS VPC'
-  inputs:
-    awsCredentials: $(aws.credentials)
-    stackName: eks-vpc
-    templateSource: file
-    templateFile: eks-vpc.yaml
-    captureStackOutputs: asVariables
-    captureAsSecuredVars: false
+stages:
+- stage: CreateClusterStage
+  displayName: Create EKS Cluster
+  jobs:
+  - job: CreateClusterJob
+    displayName: Create EKS Cluster
+    pool:
+      name: Azure Pipelines
+      # Windows is required for AWSPowerShellModuleScript@1 task
+      vmImage: vs2017-win2016
+    steps:
+    - task: CloudFormationCreateOrUpdateStack@1
+      displayName: 'Create Stack: EKS VPC'
+      inputs:
+        awsCredentials: $(aws.credentials)
+        stackName: eks-vpc
+        templateSource: file
+        templateFile: eks-vpc.yaml
+        captureStackOutputs: asVariables
+        captureAsSecuredVars: false
 
-- task: CloudFormationCreateOrUpdateStack@1
-  displayName: 'Create Stack: EKS Cluster'
-  inputs:
-    awsCredentials: $(aws.credentials)
-    stackName: eks-cluster
-    templateFile: eks-cluster.yaml
-    templateParametersSource: inline
-    templateParameters: |
-     - ParameterKey: SubnetIds
-       ParameterValue: '$(SubnetIds)'
-    captureStackOutputs: asVariables
-    captureAsSecuredVars: false
+    - task: CloudFormationCreateOrUpdateStack@1
+      displayName: 'Create Stack: EKS Cluster'
+      inputs:
+        awsCredentials: $(aws.credentials)
+        stackName: eks-cluster
+        templateFile: eks-cluster.yaml
+        templateParametersSource: inline
+        templateParameters: |
+         - ParameterKey: SubnetIds
+           ParameterValue: '$(SubnetIds)'
+        captureStackOutputs: asVariables
+        captureAsSecuredVars: false
 
-- task: CloudFormationCreateOrUpdateStack@1
-  displayName: 'Create Stack: EKS Nodes Group'
-  inputs:
-    awsCredentials: $(aws.credentials)
-    stackName: eks-nodes-group
-    templateFile: eks-nodes-group.yaml
-    templateParametersSource: inline
-    templateParameters: |
-     - ParameterKey: ClusterName
-       ParameterValue: '$(ClusterName)'
-     - ParameterKey: SubnetIds
-       ParameterValue: '$(SubnetIds)'
-     - ParameterKey: OIDCProviderId
-       ParameterValue: '$(OIDCProviderId)'
-     - ParameterKey: SSHKey
-       ParameterValue: '$(sshKey)'
+    - task: CloudFormationCreateOrUpdateStack@1
+      displayName: 'Create Stack: EKS Nodes Group'
+      inputs:
+        awsCredentials: $(aws.credentials)
+        stackName: eks-nodes-group
+        templateFile: eks-nodes-group.yaml
+        templateParametersSource: inline
+        templateParameters: |
+         - ParameterKey: ClusterName
+           ParameterValue: '$(ClusterName)'
+         - ParameterKey: SubnetIds
+           ParameterValue: '$(SubnetIds)'
+         - ParameterKey: OIDCProviderId
+           ParameterValue: '$(OIDCProviderId)'
+         - ParameterKey: SSHKey
+           ParameterValue: '$(sshKey)'
 
-- task: CloudFormationCreateOrUpdateStack@1
-  displayName: 'Create Stack: IAM Role for EKS ALB Controller'
-  inputs:
-    awsCredentials: $(aws.credentials)
-    stackName: eks-alb-controller-role
-    templateFile: eks-alb-controller-role.yaml
-    templateParametersSource: inline
-    templateParameters: |
-     - ParameterKey: OIDCProviderId
-       ParameterValue: '$(OIDCProviderId)'
+    - task: CloudFormationCreateOrUpdateStack@1
+      displayName: 'Create Stack: IAM Role for EKS ALB Controller'
+      inputs:
+        awsCredentials: $(aws.credentials)
+        stackName: eks-alb-controller-role
+        templateFile: eks-alb-controller-role.yaml
+        templateParametersSource: inline
+        templateParameters: |
+         - ParameterKey: OIDCProviderId
+           ParameterValue: '$(OIDCProviderId)'
 
-- task: AWSPowerShellModuleScript@1
-  displayName: 'Create EKS Service Connection'
-  inputs:
-    awsCredentials: $(aws.credentials)
-    workingDirectory: ./pipelines
-    filePath: ./pipelines/create-eks-service-connection.ps1
-    arguments: '-PersonalToken $(ApiPersonalToken) -OrganizationUrl $(System.CollectionUri) -ProjectId $(System.TeamProjectId) -ProjectName $(System.TeamProject) -ClusterName $(ClusterName)'
-    failOnStderr: true
+    - task: AWSPowerShellModuleScript@1
+      displayName: 'Create EKS Service Connection'
+      inputs:
+        awsCredentials: $(aws.credentials)
+        workingDirectory: ./pipelines
+        filePath: ./pipelines/create-eks-service-connection.ps1
+        arguments: '-PersonalToken $(ApiPersonalToken) -OrganizationUrl $(System.CollectionUri) -ProjectId $(System.TeamProjectId) -ProjectName $(System.TeamProject) -ClusterName $(ClusterName)'
+        failOnStderr: true
 
-- task: Kubernetes@1
-  displayName: 'Install TargetGroupBinding CRDS'
-  inputs:
-    kubernetesServiceEndpoint: $(kubernetesConnectionName)
-    command: apply
-    arguments: '-k "github.com/aws/eks-charts/stable/aws-load-balancer-controller//crds?ref=master"'
+- stage: DeployApplicationStage
+  displayName: Deploy Application
+  jobs:
+  - job: DeployApplicationJob
+    displayName: Deploy Application
+    pool:
+      name: Azure Pipelines
+      vmImage: ubuntu-latest
+    steps:
+    - task: Kubernetes@1
+      displayName: 'Install TargetGroupBinding CRDS'
+      inputs:
+        kubernetesServiceEndpoint: $(KubernetesConnectionName)
+        command: apply
+        arguments: '-k "github.com/aws/eks-charts/stable/aws-load-balancer-controller//crds?ref=master"'
+      outputFormat: none
