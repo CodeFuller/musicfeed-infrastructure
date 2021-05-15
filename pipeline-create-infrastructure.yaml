@@ -95,4 +95,4 @@ stages:
         kubernetesServiceEndpoint: $(KubernetesConnectionName)
         command: apply
         arguments: '-k "github.com/aws/eks-charts/stable/aws-load-balancer-controller//crds?ref=master"'
-      outputFormat: none
+        outputFormat: none
