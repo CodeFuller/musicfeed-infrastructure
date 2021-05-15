@@ -82,6 +82,7 @@ stages:
 
     - script: |
        echo "##vso[task.setvariable variable=ClusterName;isOutput=true]$(ClusterName)"
+       echo "##vso[task.setvariable variable=EKSLoadBalancerControllerRoleArn;isOutput=true]$(EKSLoadBalancerControllerRoleArn)"
       name: SetOutputVariables
       displayName: 'Set Output Variables'
 
@@ -96,6 +97,7 @@ stages:
       vmImage: ubuntu-latest
     variables: 
       ClusterName: $[ stageDependencies.CreateClusterStage.CreateClusterJob.outputs['SetOutputVariables.ClusterName'] ]
+      EKSLoadBalancerControllerRoleArn: $[ stageDependencies.CreateClusterStage.CreateClusterJob.outputs['SetOutputVariables.EKSLoadBalancerControllerRoleArn'] ]
     steps:
     - task: Kubernetes@1
       displayName: 'Install TargetGroupBinding CRDS'
