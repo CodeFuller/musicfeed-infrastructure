@@ -126,6 +126,12 @@ stages:
         namespace: kube-system
         command: upgrade
         chartName: eks/aws-load-balancer-controller
+        # We use specific version of the chart. We want to avoid implicit chart upgrade because manual actions could be required to satisfy prerequisites.
+        # Upgrade instructions:
+        #   1. Check whether the new version is avaialble at https://github.com/aws/eks-charts/blob/master/stable/aws-load-balancer-controller/Chart.yaml
+        #   2. Check prerequisites section, version requirements and upgrade instructions at for EKS at https://github.com/aws/eks-charts/blob/master/stable/aws-load-balancer-controller/README.md#prerequisites
+        #   3. Compare EKSLoadBalancerControllerPolicy with https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/main/docs/install/iam_policy.json
+        chartVersion: '1.2.0'
         releaseName: aws-load-balancer-controller
         overrideValues: |
          clusterName=$(ClusterName)
