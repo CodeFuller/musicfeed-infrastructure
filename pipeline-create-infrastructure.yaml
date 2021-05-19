@@ -27,6 +27,8 @@ stages:
       runOnce:
         deploy:
           steps:
+          - checkout: self
+
           - task: CloudFormationCreateOrUpdateStack@1
             displayName: 'Create Stack: EKS VPC'
             inputs:
