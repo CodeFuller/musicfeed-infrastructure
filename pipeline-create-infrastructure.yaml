@@ -1,3 +1,5 @@
+name: $(Build.BuildId)
+
 # Current pipeline results to creation of resources in AWS.
 # We need to prevent automatic launches to avoid unwanted expenses.
 trigger: none
