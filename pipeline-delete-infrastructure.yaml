@@ -32,6 +32,11 @@ stages:
               arguments: -f ingress.yaml
               outputFormat: none
 
+          # We need to give some time for ALB contrller to delete provisioned resources.
+          # Otherwise following steps for EKS clean-up will fail due to existing dependencies.
+          - powershell: Start-Sleep -Seconds 60
+            displayName: Wait for Ingress Resources Deletion
+
           - task: CloudFormationDeleteStack@1
             displayName: 'Delete Stack: IAM Role for EKS ALB Controller'
             inputs:
