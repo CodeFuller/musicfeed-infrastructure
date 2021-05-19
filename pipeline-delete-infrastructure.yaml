@@ -1,34 +1,57 @@
-pool:
-  name: Azure Pipelines
-  vmImage: ubuntu-latest
-
 trigger: none
 
 variables:
-  AWS.Region: us-east-1
+  # Variables for connection names must be declared on pipeline level, otherwise pipeline will not start.
   AWSConnectionName: CodeFuller @ AWS
+  KubernetesConnectionName: AWS EKS Cluster
 
-steps:
-- task: CloudFormationDeleteStack@1
-  displayName: 'Delete Stack: IAM Role for EKS ALB Controller'
-  inputs:
-    awsCredentials: $(AWSConnectionName)
-    stackName: eks-alb-controller-role
+stages:
+- stage: DeleteClusterStage
+  displayName: Delete EKS Cluster
+  jobs:
+  - deployment: DeleteClusterJob
+    displayName: Delete EKS Cluster
+    environment: aws
+    pool:
+      name: Azure Pipelines
+      vmImage: ubuntu-latest
+    variables:
+      aws.region: us-east-1
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - checkout: self
 
-- task: CloudFormationDeleteStack@1
-  displayName: 'Delete Stack: EKS Nodes Group'
-  inputs:
-    awsCredentials: $(AWSConnectionName)
-    stackName: eks-nodes-group
+          - task: Kubernetes@1
+            displayName: Delete Ingress
+            inputs:
+              kubernetesServiceEndpoint: $(KubernetesConnectionName)
+              command: delete
+              namespace: musicfeed
+              arguments: -f ingress.yaml
+              outputFormat: none
 
-- task: CloudFormationDeleteStack@1
-  displayName: 'Delete Stack: EKS Cluster'
-  inputs:
-    awsCredentials: $(AWSConnectionName)
-    stackName: eks-cluster
+          - task: CloudFormationDeleteStack@1
+            displayName: 'Delete Stack: IAM Role for EKS ALB Controller'
+            inputs:
+              awsCredentials: $(AWSConnectionName)
+              stackName: eks-alb-controller-role
 
-- task: CloudFormationDeleteStack@1
-  displayName: 'Delete Stack: EKS VPC'
-  inputs:
-    awsCredentials: $(AWSConnectionName)
-    stackName: eks-vpc
+          - task: CloudFormationDeleteStack@1
+            displayName: 'Delete Stack: EKS Nodes Group'
+            inputs:
+              awsCredentials: $(AWSConnectionName)
+              stackName: eks-nodes-group
+
+          - task: CloudFormationDeleteStack@1
+            displayName: 'Delete Stack: EKS Cluster'
+            inputs:
+              awsCredentials: $(AWSConnectionName)
+              stackName: eks-cluster
+
+          - task: CloudFormationDeleteStack@1
+            displayName: 'Delete Stack: EKS VPC'
+            inputs:
+              awsCredentials: $(AWSConnectionName)
+              stackName: eks-vpc
