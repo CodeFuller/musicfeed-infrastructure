@@ -1,157 +1,157 @@
-pool:
-  name: Azure Pipelines
-  # Windows is required for AWSPowerShellModuleScript@1 task
-  vmImage: vs2017-win2016
-
-variables:
-  aws.region: us-east-1
-  aws.credentials: CodeFuller @ AWS
-  kubernetesConnectionName: AWS EKS Cluster
-  sshKey: MusicFeed Key
-
 stages:
 - stage: CreateClusterStage
   displayName: Create EKS Cluster
   jobs:
-  - job: CreateClusterJob
+  - deployment: CreateClusterJob
     displayName: Create EKS Cluster
+    environment: aws
     pool:
       name: Azure Pipelines
       # Windows is required for AWSPowerShellModuleScript@1 task
       vmImage: vs2017-win2016
-    steps:
-    - task: CloudFormationCreateOrUpdateStack@1
-      displayName: 'Create Stack: EKS VPC'
-      inputs:
-        awsCredentials: $(aws.credentials)
-        stackName: eks-vpc
-        templateSource: file
-        templateFile: eks-vpc.yaml
-        captureStackOutputs: asVariables
-        captureAsSecuredVars: false
+    variables:
+      aws.region: us-east-1
+      aws.credentials: CodeFuller @ AWS
+      sshKey: MusicFeed Key
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: CloudFormationCreateOrUpdateStack@1
+            displayName: 'Create Stack: EKS VPC'
+            inputs:
+              awsCredentials: $(aws.credentials)
+              stackName: eks-vpc
+              templateSource: file
+              templateFile: eks-vpc.yaml
+              captureStackOutputs: asVariables
+              captureAsSecuredVars: false
 
-    - task: CloudFormationCreateOrUpdateStack@1
-      displayName: 'Create Stack: EKS Cluster'
-      inputs:
-        awsCredentials: $(aws.credentials)
-        stackName: eks-cluster
-        templateFile: eks-cluster.yaml
-        templateParametersSource: inline
-        templateParameters: |
-         - ParameterKey: SubnetIds
-           ParameterValue: '$(SubnetIds)'
-        captureStackOutputs: asVariables
-        captureAsSecuredVars: false
+          - task: CloudFormationCreateOrUpdateStack@1
+            displayName: 'Create Stack: EKS Cluster'
+            inputs:
+              awsCredentials: $(aws.credentials)
+              stackName: eks-cluster
+              templateFile: eks-cluster.yaml
+              templateParametersSource: inline
+              templateParameters: |
+                - ParameterKey: SubnetIds
+                  ParameterValue: '$(SubnetIds)'
+              captureStackOutputs: asVariables
+              captureAsSecuredVars: false
 
-    - task: CloudFormationCreateOrUpdateStack@1
-      displayName: 'Create Stack: EKS Nodes Group'
-      inputs:
-        awsCredentials: $(aws.credentials)
-        stackName: eks-nodes-group
-        templateFile: eks-nodes-group.yaml
-        templateParametersSource: inline
-        templateParameters: |
-         - ParameterKey: ClusterName
-           ParameterValue: '$(ClusterName)'
-         - ParameterKey: SubnetIds
-           ParameterValue: '$(SubnetIds)'
-         - ParameterKey: OIDCProviderId
-           ParameterValue: '$(OIDCProviderId)'
-         - ParameterKey: SSHKey
-           ParameterValue: '$(sshKey)'
+          - task: CloudFormationCreateOrUpdateStack@1
+            displayName: 'Create Stack: EKS Nodes Group'
+            inputs:
+              awsCredentials: $(aws.credentials)
+              stackName: eks-nodes-group
+              templateFile: eks-nodes-group.yaml
+              templateParametersSource: inline
+              templateParameters: |
+                - ParameterKey: ClusterName
+                  ParameterValue: '$(ClusterName)'
+                - ParameterKey: SubnetIds
+                  ParameterValue: '$(SubnetIds)'
+                - ParameterKey: OIDCProviderId
+                  ParameterValue: '$(OIDCProviderId)'
+                - ParameterKey: SSHKey
+                  ParameterValue: '$(sshKey)'
 
-    - task: CloudFormationCreateOrUpdateStack@1
-      displayName: 'Create Stack: IAM Role for EKS ALB Controller'
-      inputs:
-        awsCredentials: $(aws.credentials)
-        stackName: eks-alb-controller-role
-        templateFile: eks-alb-controller-role.yaml
-        templateParametersSource: inline
-        templateParameters: |
-         - ParameterKey: OIDCProviderId
-           ParameterValue: '$(OIDCProviderId)'
-        captureStackOutputs: asVariables
-        captureAsSecuredVars: false
+          - task: CloudFormationCreateOrUpdateStack@1
+            displayName: 'Create Stack: IAM Role for EKS ALB Controller'
+            inputs:
+              awsCredentials: $(aws.credentials)
+              stackName: eks-alb-controller-role
+              templateFile: eks-alb-controller-role.yaml
+              templateParametersSource: inline
+              templateParameters: |
+                - ParameterKey: OIDCProviderId
+                  ParameterValue: '$(OIDCProviderId)'
+              captureStackOutputs: asVariables
+              captureAsSecuredVars: false
 
-    - task: AWSPowerShellModuleScript@1
-      displayName: 'Configure EKS Service Connection'
-      inputs:
-        awsCredentials: $(aws.credentials)
-        workingDirectory: ./pipelines
-        filePath: ./pipelines/configure-eks-service-connection.ps1
-        arguments: '-PersonalToken $(ApiPersonalToken) -OrganizationUrl $(System.CollectionUri) -ProjectId $(System.TeamProjectId) -ProjectName $(System.TeamProject) -ClusterName $(ClusterName)'
-        failOnStderr: true
+          - task: AWSPowerShellModuleScript@1
+            displayName: 'Configure EKS Service Connection'
+            inputs:
+              awsCredentials: $(aws.credentials)
+              workingDirectory: ./pipelines
+              filePath: ./pipelines/configure-eks-service-connection.ps1
+              arguments: '-PersonalToken $(ApiPersonalToken) -OrganizationUrl $(System.CollectionUri) -ProjectId $(System.TeamProjectId) -ProjectName $(System.TeamProject) -ClusterName $(ClusterName)'
+              failOnStderr: true
 
-    - script: |
-       echo "##vso[task.setvariable variable=ClusterName;isOutput=true]$(ClusterName)"
-       echo "##vso[task.setvariable variable=EKSLoadBalancerControllerRoleArn;isOutput=true]$(EKSLoadBalancerControllerRoleArn)"
-      name: SetOutputVariables
-      displayName: 'Set Output Variables'
+          - script: |
+              echo "##vso[task.setvariable variable=ClusterName;isOutput=true]$(ClusterName)"
+              echo "##vso[task.setvariable variable=EKSLoadBalancerControllerRoleArn;isOutput=true]$(EKSLoadBalancerControllerRoleArn)"
+            name: SetOutputVariables
+            displayName: 'Set Output Variables'
 
-- stage: DeployApplicationStage
-  displayName: Deploy Application
-  dependsOn: CreateClusterStage
+- stage: ConfigureClusterStage
+  displayName: Configure EKS Cluster
   jobs:
-  - job: DeployApplicationJob
-    displayName: Deploy Application
+  - deployment: InstallALB
+    displayName: Install ALB
+    environment: aws
     pool:
       name: Azure Pipelines
       vmImage: ubuntu-latest
     variables: 
       ClusterName: $[ stageDependencies.CreateClusterStage.CreateClusterJob.outputs['SetOutputVariables.ClusterName'] ]
       EKSLoadBalancerControllerRoleArn: $[ stageDependencies.CreateClusterStage.CreateClusterJob.outputs['SetOutputVariables.EKSLoadBalancerControllerRoleArn'] ]
-      Namespace: musicfeed
-    steps:
-    - task: Kubernetes@1
-      displayName: 'Install TargetGroupBinding CRDS'
-      inputs:
-        kubernetesServiceEndpoint: $(KubernetesConnectionName)
-        command: apply
-        arguments: '-k "github.com/aws/eks-charts/stable/aws-load-balancer-controller//crds?ref=master"'
-        outputFormat: none
+      KubernetesConnectionName: AWS EKS Cluster
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: Kubernetes@1
+            displayName: 'Install TargetGroupBinding CRDS'
+            inputs:
+              kubernetesServiceEndpoint: $(KubernetesConnectionName)
+              command: apply
+              arguments: '-k "github.com/aws/eks-charts/stable/aws-load-balancer-controller//crds?ref=master"'
+              outputFormat: none
 
-    - task: HelmDeploy@0
-      displayName: Add eks-charts Repository
-      inputs:
-        connectionType: Kubernetes Service Connection
-        kubernetesServiceConnection: $(KubernetesConnectionName)
-        command: repo
-        arguments: add eks https://aws.github.io/eks-charts
+          - task: HelmDeploy@0
+            displayName: Add eks-charts Repository
+            inputs:
+              connectionType: Kubernetes Service Connection
+              kubernetesServiceConnection: $(KubernetesConnectionName)
+              command: repo
+              arguments: add eks https://aws.github.io/eks-charts
 
-    - task: HelmDeploy@0
-      displayName: Install ALB Controller
-      inputs:
-        connectionType: Kubernetes Service Connection
-        kubernetesServiceConnection: $(KubernetesConnectionName)
-        namespace: kube-system
-        command: upgrade
-        chartName: eks/aws-load-balancer-controller
-        # We use specific version of the chart. We want to avoid implicit chart upgrade because manual actions could be required to satisfy prerequisites.
-        # Upgrade instructions:
-        #   1. Check whether the new version is avaialble at https://github.com/aws/eks-charts/blob/master/stable/aws-load-balancer-controller/Chart.yaml
-        #   2. Check prerequisites section, version requirements and upgrade instructions at for EKS at https://github.com/aws/eks-charts/blob/master/stable/aws-load-balancer-controller/README.md#prerequisites
-        #   3. Compare EKSLoadBalancerControllerPolicy with https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/main/docs/install/iam_policy.json
-        chartVersion: '1.2.0'
-        releaseName: aws-load-balancer-controller
-        overrideValues: |
-         clusterName=$(ClusterName)
-         serviceAccount.create=true
-         serviceAccount.name=aws-load-balancer-controller
-         serviceAccount.annotations."eks\.amazonaws\.com/role-arn"="$(EKSLoadBalancerControllerRoleArn)"
+          - task: HelmDeploy@0
+            displayName: Install ALB Controller
+            inputs:
+              connectionType: Kubernetes Service Connection
+              kubernetesServiceConnection: $(KubernetesConnectionName)
+              namespace: kube-system
+              command: upgrade
+              chartName: eks/aws-load-balancer-controller
+              # We use specific version of the chart. We want to avoid implicit chart upgrade because manual actions could be required to satisfy prerequisites.
+              # Upgrade instructions:
+              #   1. Check whether the new version is avaialble at https://github.com/aws/eks-charts/blob/master/stable/aws-load-balancer-controller/Chart.yaml
+              #   2. Check prerequisites section, version requirements and upgrade instructions at for EKS at https://github.com/aws/eks-charts/blob/master/stable/aws-load-balancer-controller/README.md#prerequisites
+              #   3. Compare EKSLoadBalancerControllerPolicy with https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/main/docs/install/iam_policy.json
+              chartVersion: '1.2.0'
+              releaseName: aws-load-balancer-controller
+              overrideValues: |
+                clusterName=$(ClusterName)
+                serviceAccount.create=true
+                serviceAccount.name=aws-load-balancer-controller
+                serviceAccount.annotations."eks\.amazonaws\.com/role-arn"="$(EKSLoadBalancerControllerRoleArn)"
 
-    - task: Kubernetes@1
-      displayName: Create Namespace
-      inputs:
-        kubernetesServiceEndpoint: $(KubernetesConnectionName)
-        command: apply
-        arguments: -f namespace.yaml
-        outputFormat: none
+          - task: Kubernetes@1
+            displayName: Create Namespace
+            inputs:
+              kubernetesServiceEndpoint: $(KubernetesConnectionName)
+              command: apply
+              arguments: -f namespace.yaml
+              outputFormat: none
 
-    - task: Kubernetes@1
-      displayName: Create Ingress
-      inputs:
-        kubernetesServiceEndpoint: $(KubernetesConnectionName)
-        command: apply
-        namespace: $(Namespace)
-        arguments: -f ingress.yaml
-        outputFormat: none
+          - task: Kubernetes@1
+            displayName: Create Ingress
+            inputs:
+              kubernetesServiceEndpoint: $(KubernetesConnectionName)
+              command: apply
+              namespace: musicfeed
+              arguments: -f ingress.yaml
+              outputFormat: none
