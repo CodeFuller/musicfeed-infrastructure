@@ -99,6 +99,7 @@ stages:
 
 - stage: ConfigureClusterStage
   displayName: Configure EKS Cluster
+  dependsOn: CreateClusterStage
   jobs:
   - deployment: InstallALB
     displayName: Install ALB
@@ -107,8 +108,8 @@ stages:
       name: Azure Pipelines
       vmImage: ubuntu-latest
     variables: 
-      ClusterName: $[ stageDependencies.CreateClusterStage.CreateClusterJob.outputs['SetOutputVariables.ClusterName'] ]
-      EKSLoadBalancerControllerRoleArn: $[ stageDependencies.CreateClusterStage.CreateClusterJob.outputs['SetOutputVariables.EKSLoadBalancerControllerRoleArn'] ]
+      ClusterName: $[ stageDependencies.CreateClusterStage.CreateClusterJob.outputs['CreateClusterJob.SetOutputVariables.ClusterName'] ]
+      EKSLoadBalancerControllerRoleArn: $[ stageDependencies.CreateClusterStage.CreateClusterJob.outputs['CreateClusterJob.SetOutputVariables.EKSLoadBalancerControllerRoleArn'] ]
     strategy:
       runOnce:
         deploy:
