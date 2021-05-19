@@ -4,6 +4,10 @@ name: $(Build.BuildId)
 # We need to prevent automatic launches to avoid unwanted expenses.
 trigger: none
 
+variables:
+  # This variable must be declared on pipeline level, otherwise pipeline will not start.
+  aws.credentials: CodeFuller @ AWS
+
 stages:
 - stage: CreateClusterStage
   displayName: Create EKS Cluster
@@ -17,7 +21,6 @@ stages:
       vmImage: vs2017-win2016
     variables:
       aws.region: us-east-1
-      aws.credentials: CodeFuller @ AWS
       sshKey: MusicFeed Key
     strategy:
       runOnce:
