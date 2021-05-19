@@ -6,29 +6,29 @@ trigger: none
 
 variables:
   AWS.Region: us-east-1
-  AWS.Credentials: CodeFuller @ AWS
+  AWSConnectionName: CodeFuller @ AWS
 
 steps:
 - task: CloudFormationDeleteStack@1
   displayName: 'Delete Stack: IAM Role for EKS ALB Controller'
   inputs:
-    awsCredentials: $(AWS.Credentials)
+    awsCredentials: $(AWSConnectionName)
     stackName: eks-alb-controller-role
 
 - task: CloudFormationDeleteStack@1
   displayName: 'Delete Stack: EKS Nodes Group'
   inputs:
-    awsCredentials: $(AWS.Credentials)
+    awsCredentials: $(AWSConnectionName)
     stackName: eks-nodes-group
 
 - task: CloudFormationDeleteStack@1
   displayName: 'Delete Stack: EKS Cluster'
   inputs:
-    awsCredentials: $(AWS.Credentials)
+    awsCredentials: $(AWSConnectionName)
     stackName: eks-cluster
 
 - task: CloudFormationDeleteStack@1
   displayName: 'Delete Stack: EKS VPC'
   inputs:
-    awsCredentials: $(AWS.Credentials)
+    awsCredentials: $(AWSConnectionName)
     stackName: eks-vpc

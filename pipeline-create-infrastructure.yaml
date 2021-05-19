@@ -5,8 +5,9 @@ name: $(Build.BuildId)
 trigger: none
 
 variables:
-  # This variable must be declared on pipeline level, otherwise pipeline will not start.
-  aws.credentials: CodeFuller @ AWS
+  # Variables for connection names must be declared on pipeline level, otherwise pipeline will not start.
+  AWSConnectionName: CodeFuller @ AWS
+  KubernetesConnectionName: AWS EKS Cluster
 
 stages:
 - stage: CreateClusterStage
@@ -29,7 +30,7 @@ stages:
           - task: CloudFormationCreateOrUpdateStack@1
             displayName: 'Create Stack: EKS VPC'
             inputs:
-              awsCredentials: $(aws.credentials)
+              awsCredentials: $(AWSConnectionName)
               stackName: eks-vpc
               templateSource: file
               templateFile: eks-vpc.yaml
@@ -39,7 +40,7 @@ stages:
           - task: CloudFormationCreateOrUpdateStack@1
             displayName: 'Create Stack: EKS Cluster'
             inputs:
-              awsCredentials: $(aws.credentials)
+              awsCredentials: $(AWSConnectionName)
               stackName: eks-cluster
               templateFile: eks-cluster.yaml
               templateParametersSource: inline
@@ -52,7 +53,7 @@ stages:
           - task: CloudFormationCreateOrUpdateStack@1
             displayName: 'Create Stack: EKS Nodes Group'
             inputs:
-              awsCredentials: $(aws.credentials)
+              awsCredentials: $(AWSConnectionName)
               stackName: eks-nodes-group
               templateFile: eks-nodes-group.yaml
               templateParametersSource: inline
@@ -69,7 +70,7 @@ stages:
           - task: CloudFormationCreateOrUpdateStack@1
             displayName: 'Create Stack: IAM Role for EKS ALB Controller'
             inputs:
-              awsCredentials: $(aws.credentials)
+              awsCredentials: $(AWSConnectionName)
               stackName: eks-alb-controller-role
               templateFile: eks-alb-controller-role.yaml
               templateParametersSource: inline
@@ -82,7 +83,7 @@ stages:
           - task: AWSPowerShellModuleScript@1
             displayName: 'Configure EKS Service Connection'
             inputs:
-              awsCredentials: $(aws.credentials)
+              awsCredentials: $(AWSConnectionName)
               workingDirectory: ./pipelines
               filePath: ./pipelines/configure-eks-service-connection.ps1
               arguments: '-PersonalToken $(ApiPersonalToken) -OrganizationUrl $(System.CollectionUri) -ProjectId $(System.TeamProjectId) -ProjectName $(System.TeamProject) -ClusterName $(ClusterName)'
@@ -106,7 +107,6 @@ stages:
     variables: 
       ClusterName: $[ stageDependencies.CreateClusterStage.CreateClusterJob.outputs['SetOutputVariables.ClusterName'] ]
       EKSLoadBalancerControllerRoleArn: $[ stageDependencies.CreateClusterStage.CreateClusterJob.outputs['SetOutputVariables.EKSLoadBalancerControllerRoleArn'] ]
-      KubernetesConnectionName: AWS EKS Cluster
     strategy:
       runOnce:
         deploy:
