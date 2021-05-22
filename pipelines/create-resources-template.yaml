@@ -1,0 +1,37 @@
+parameters:
+- name: envName
+  type: string
+
+- name: envDisplayName
+  type: string
+
+stages:
+- stage: CreateResourcesFor${{ parameters.envDisplayName }}
+  displayName: Create Resources for ${{ parameters.envDisplayName }}
+  pool:
+    name: Azure Pipelines
+    vmImage: ubuntu-latest
+  jobs:
+  - deployment: CreateResourcesJob
+    displayName: Create Resources for ${{ parameters.envDisplayName }}
+    environment: ${{ parameters.envName }}
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: Kubernetes@1
+            displayName: Create Namespace
+            inputs:
+              kubernetesServiceEndpoint: $(KubernetesConnectionName)
+              command: apply
+              arguments: -f namespace-${{ parameters.envName }}.yaml
+              outputFormat: none
+
+          - task: Kubernetes@1
+            displayName: Create Ingress
+            inputs:
+              kubernetesServiceEndpoint: $(KubernetesConnectionName)
+              command: apply
+              namespace: musicfeed-${{ parameters.envName }}
+              arguments: -f ingress.yaml
+              outputFormat: none

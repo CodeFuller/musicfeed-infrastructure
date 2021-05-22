@@ -153,19 +153,12 @@ stages:
                 serviceAccount.name=aws-load-balancer-controller
                 serviceAccount.annotations."eks\.amazonaws\.com/role-arn"="$(EKSLoadBalancerControllerRoleArn)"
 
-          - task: Kubernetes@1
-            displayName: Create Namespace
-            inputs:
-              kubernetesServiceEndpoint: $(KubernetesConnectionName)
-              command: apply
-              arguments: -f namespace.yaml
-              outputFormat: none
+- template: create-resources-template.yaml
+  parameters:
+    envName: test
+    envDisplayName: Test
 
-          - task: Kubernetes@1
-            displayName: Create Ingress
-            inputs:
-              kubernetesServiceEndpoint: $(KubernetesConnectionName)
-              command: apply
-              namespace: musicfeed
-              arguments: -f ingress.yaml
-              outputFormat: none
+- template: create-resources-template.yaml
+  parameters:
+    envName: prod
+    envDisplayName: Prod
