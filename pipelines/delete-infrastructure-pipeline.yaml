@@ -8,6 +8,16 @@ variables:
   KubernetesConnectionName: AWS EKS Cluster
 
 stages:
+- template: delete-resources-template.yaml
+  parameters:
+    envName: test
+    envDisplayName: Test
+
+- template: delete-resources-template.yaml
+  parameters:
+    envName: prod
+    envDisplayName: Prod
+
 - stage: DeleteClusterStage
   displayName: Delete EKS Cluster
   jobs:
@@ -23,18 +33,7 @@ stages:
       runOnce:
         deploy:
           steps:
-          - checkout: self
-
-          - task: Kubernetes@1
-            displayName: Delete Ingress
-            inputs:
-              kubernetesServiceEndpoint: $(KubernetesConnectionName)
-              command: delete
-              namespace: musicfeed
-              arguments: -f ingress.yaml
-              outputFormat: none
-
-          # We need to give some time for ALB contrller to delete provisioned resources.
+          # We need to give some time for ALB controller to delete provisioned resources.
           # Otherwise following steps for EKS clean-up will fail due to existing dependencies.
           - powershell: Start-Sleep -Seconds 60
             displayName: Wait for Ingress Resources Deletion

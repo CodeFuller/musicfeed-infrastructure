@@ -1,0 +1,31 @@
+parameters:
+- name: envName
+  type: string
+
+- name: envDisplayName
+  type: string
+
+stages:
+- stage: DeleteResourcesFor${{ parameters.envDisplayName }}
+  displayName: Delete Resources for ${{ parameters.envDisplayName }} Environment
+  pool:
+    name: Azure Pipelines
+    vmImage: ubuntu-latest
+  jobs:
+  - deployment: DeleteResourcesJob
+    displayName: Delete Resources for ${{ parameters.envDisplayName }} Environment
+    environment: ${{ parameters.envName }}
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - checkout: self
+
+          - task: Kubernetes@1
+            displayName: Delete Ingress
+            inputs:
+              kubernetesServiceEndpoint: $(KubernetesConnectionName)
+              command: delete
+              namespace: musicfeed-${{ parameters.envName }}
+              arguments: -f ingress.yaml
+              outputFormat: none
