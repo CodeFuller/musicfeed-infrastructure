@@ -19,6 +19,8 @@ stages:
       runOnce:
         deploy:
           steps:
+          - checkout: self
+
           - task: Kubernetes@1
             displayName: Create Namespace
             inputs:
