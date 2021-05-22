@@ -114,8 +114,6 @@ stages:
       runOnce:
         deploy:
           steps:
-          - checkout: self
-
           - task: Kubernetes@1
             displayName: 'Install TargetGroupBinding CRDS'
             inputs:
