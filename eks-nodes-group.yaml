@@ -81,6 +81,12 @@ Resources:
       ClusterName: !Ref ClusterName
       NodeRole: !GetAtt EKSNodeRole.Arn
       InstanceTypes:
+        # https://stackoverflow.com/questions/57970896/
+        # The following document lists maximum numbers of pods for each instance type: https://github.com/awslabs/amazon-eks-ami/blob/master/files/eni-max-pods.txt
+        # It is 11 pods for t3.small instance, 22 total for 2 nodes.
+        # 8 pods are occupied by system (2 x (ALB, node, coredns, kube-proxy))
+        # Rest number for service pods: 14
+        # Max number of services (2 pods in replica, 2 environments): 14 / 4 = 3
         - t3.small
       ScalingConfig:
         DesiredSize: 2
