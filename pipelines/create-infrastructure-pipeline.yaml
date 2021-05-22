@@ -159,4 +159,4 @@ stages:
 - template: create-resources-template.yaml
   parameters:
     envName: prod
-    envDisplayName: Prod
+    envDisplayName: Production
