@@ -97,11 +97,11 @@ stages:
             name: SetOutputVariables
             displayName: 'Set Output Variables'
 
-- stage: ConfigureClusterStage
-  displayName: Configure EKS Cluster
+- stage: InstallALBStage
+  displayName: Install ALB
   dependsOn: CreateClusterStage
   jobs:
-  - deployment: InstallALB
+  - deployment: InstallALBJob
     displayName: Install ALB
     environment: aws
     pool:
