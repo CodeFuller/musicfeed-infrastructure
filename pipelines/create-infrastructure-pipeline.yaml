@@ -84,9 +84,9 @@ stages:
               arguments: '-PersonalToken $(AzureDevopsApiToken) -OrganizationUrl $(System.CollectionUri) -ProjectId $(System.TeamProjectId) -ProjectName "$(System.TeamProject)" -ClusterName "$(ClusterName)"'
               failOnStderr: true
 
-          - script: |
-              echo "##vso[task.setvariable variable=ClusterName;isOutput=true]$(ClusterName)"
-              echo "##vso[task.setvariable variable=OIDCProviderId;isOutput=true]$(OIDCProviderId)"
+          - powershell: |
+              Write-Host "##vso[task.setvariable variable=ClusterName;isOutput=true]$(ClusterName)"
+              Write-Host "##vso[task.setvariable variable=OIDCProviderId;isOutput=true]$(OIDCProviderId)"
             name: SetOutputVariables
             displayName: 'Set Output Variables'
 
