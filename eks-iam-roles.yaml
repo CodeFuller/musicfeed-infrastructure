@@ -1,7 +1,5 @@
-# Source: https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html
-
 AWSTemplateFormatVersion: '2010-09-09'
-Description: IAM Role for EKS ALB Controller
+Description: IAM Roles for EKS Cluster
 
 Parameters:
   OIDCProviderId:
@@ -196,7 +194,62 @@ Resources:
           - elasticloadbalancing:ModifyRule
           Resource: "*"
 
+  # https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/aws.md
+  ExternalDNSRole:
+    Type: AWS::IAM::Role
+    Description: IAM Role for ExternalDNS
+    Properties:
+      # https://stackoverflow.com/a/67400755/5740031
+      AssumeRolePolicyDocument: !Sub
+        - |
+          {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Principal": {
+                        "Federated": "${IamOIDCProviderArn}"
+                    },
+                    "Action": "sts:AssumeRoleWithWebIdentity",
+                    "Condition": {
+                        "StringEquals": {
+                            "${OIDCProviderEndpoint}:aud": "sts.amazonaws.com",
+                            "${OIDCProviderEndpoint}:sub": "system:serviceaccount:kube-system:external-dns"
+                        }
+                    }
+                }
+            ]
+          }
+        - {
+            "IamOIDCProviderArn": { "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:oidc-provider/${OIDCProviderId}" },
+            "OIDCProviderEndpoint": { "Ref": "OIDCProviderId" }
+          }
+
+  EKSAllowExternalDNSUpdatesPolicy:
+    Type: AWS::IAM::Policy
+    Description: Allows ExternalDNS to update Route53 Resource Record Sets and Hosted Zones
+    Properties:
+      PolicyName: EKSAllowExternalDNSUpdatesPolicy
+      Roles:
+        - !Ref ExternalDNSRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - route53:ChangeResourceRecordSets
+          Resource: "arn:aws:route53:::hostedzone/*"
+        - Effect: Allow
+          Action:
+          - route53:ListHostedZones
+          - route53:ListResourceRecordSets
+          Resource: "*"
+
 Outputs: 
   EKSLoadBalancerControllerRoleArn:
     Description: ARN of created EKSLoadBalancerControllerRole
     Value: !GetAtt EKSLoadBalancerControllerRole.Arn
+
+  ExternalDNSRoleArn:
+    Description: ARN of created ExternalDNSRole
+    Value: !GetAtt ExternalDNSRole.Arn

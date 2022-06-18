@@ -8,12 +8,16 @@ variables:
   # Variables for connection names must be declared on pipeline level, otherwise pipeline will not start.
   AWSConnectionName: CodeFuller @ AWS
   KubernetesConnectionName: AWS EKS Cluster
+  # Additional variables that must befined for pipeline:
+  # AzureDevopsApiToken: *****
+  # DomainName: example.com
+  # AwsHostedZoneId: Z01055552B3KYP9ID3C6O
 
 stages:
-- stage: CreateClusterStage
+- stage: CreateEKSClusterStage
   displayName: Create EKS Cluster
   jobs:
-  - deployment: CreateClusterJob
+  - deployment: CreateEKSClusterJob
     displayName: Create EKS Cluster
     environment: aws
     pool:
@@ -44,6 +48,7 @@ stages:
             inputs:
               awsCredentials: $(AWSConnectionName)
               stackName: eks-cluster
+              templateSource: file
               templateFile: eks-cluster.yaml
               templateParametersSource: inline
               templateParameters: |
@@ -57,6 +62,7 @@ stages:
             inputs:
               awsCredentials: $(AWSConnectionName)
               stackName: eks-nodes-group
+              templateSource: file
               templateFile: eks-nodes-group.yaml
               templateParametersSource: inline
               templateParameters: |
@@ -69,12 +75,43 @@ stages:
                 - ParameterKey: SSHKey
                   ParameterValue: '$(sshKey)'
 
-          - task: CloudFormationCreateOrUpdateStack@1
-            displayName: 'Create Stack: IAM Role for EKS ALB Controller'
+          - task: AWSPowerShellModuleScript@1
+            displayName: 'Configure EKS Service Connection'
             inputs:
               awsCredentials: $(AWSConnectionName)
-              stackName: eks-alb-controller-role
-              templateFile: eks-alb-controller-role.yaml
+              workingDirectory: ./pipelines
+              filePath: ./pipelines/configure-eks-service-connection.ps1
+              arguments: '-PersonalToken $(AzureDevopsApiToken) -OrganizationUrl $(System.CollectionUri) -ProjectId $(System.TeamProjectId) -ProjectName "$(System.TeamProject)" -ClusterName "$(ClusterName)"'
+              failOnStderr: true
+
+          - script: |
+              echo "##vso[task.setvariable variable=ClusterName;isOutput=true]$(ClusterName)"
+            name: SetOutputVariables
+            displayName: 'Set Output Variables'
+
+- stage: ConfigureEKSClusterStage
+  displayName: Configure EKS Cluster
+  dependsOn: CreateEKSClusterStage
+  jobs:
+  - deployment: CreateEKSClusterJob
+    displayName: Configure EKS Cluster
+    environment: aws
+    pool:
+      name: Azure Pipelines
+      vmImage: ubuntu-latest
+    variables: 
+      ClusterName: $[ stageDependencies.CreateEKSClusterStage.CreateEKSClusterJob.outputs['CreateEKSClusterJob.SetOutputVariables.ClusterName'] ]
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: CloudFormationCreateOrUpdateStack@1
+            displayName: 'Create Stack: IAM Roles for EKS Cluster'
+            inputs:
+              awsCredentials: $(AWSConnectionName)
+              stackName: eks-iam-roles
+              templateSource: file
+              templateFile: eks-iam-roles.yaml
               templateParametersSource: inline
               templateParameters: |
                 - ParameterKey: OIDCProviderId
@@ -82,38 +119,6 @@ stages:
               captureStackOutputs: asVariables
               captureAsSecuredVars: false
 
-          - task: AWSPowerShellModuleScript@1
-            displayName: 'Configure EKS Service Connection'
-            inputs:
-              awsCredentials: $(AWSConnectionName)
-              workingDirectory: ./pipelines
-              filePath: ./pipelines/configure-eks-service-connection.ps1
-              arguments: '-PersonalToken $(ApiPersonalToken) -OrganizationUrl $(System.CollectionUri) -ProjectId $(System.TeamProjectId) -ProjectName "$(System.TeamProject)" -ClusterName "$(ClusterName)"'
-              failOnStderr: true
-
-          - script: |
-              echo "##vso[task.setvariable variable=ClusterName;isOutput=true]$(ClusterName)"
-              echo "##vso[task.setvariable variable=EKSLoadBalancerControllerRoleArn;isOutput=true]$(EKSLoadBalancerControllerRoleArn)"
-            name: SetOutputVariables
-            displayName: 'Set Output Variables'
-
-- stage: InstallALBStage
-  displayName: Install ALB
-  dependsOn: CreateClusterStage
-  jobs:
-  - deployment: InstallALBJob
-    displayName: Install ALB
-    environment: aws
-    pool:
-      name: Azure Pipelines
-      vmImage: ubuntu-latest
-    variables: 
-      ClusterName: $[ stageDependencies.CreateClusterStage.CreateClusterJob.outputs['CreateClusterJob.SetOutputVariables.ClusterName'] ]
-      EKSLoadBalancerControllerRoleArn: $[ stageDependencies.CreateClusterStage.CreateClusterJob.outputs['CreateClusterJob.SetOutputVariables.EKSLoadBalancerControllerRoleArn'] ]
-    strategy:
-      runOnce:
-        deploy:
-          steps:
           - task: Kubernetes@1
             displayName: 'Install TargetGroupBinding CRDS'
             inputs:
@@ -150,6 +155,39 @@ stages:
                 serviceAccount.create=true
                 serviceAccount.name=aws-load-balancer-controller
                 serviceAccount.annotations."eks\.amazonaws\.com/role-arn"="$(EKSLoadBalancerControllerRoleArn)"
+
+          - task: HelmDeploy@0
+            displayName: Add bitnami Repository
+            inputs:
+              connectionType: Kubernetes Service Connection
+              kubernetesServiceConnection: $(KubernetesConnectionName)
+              command: repo
+              arguments: add bitnami https://charts.bitnami.com/bitnami
+
+          # https://github.com/bitnami/charts/tree/master/bitnami/external-dns
+          # https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/aws.md
+          - task: HelmDeploy@0
+            displayName: Install ExternalDNS
+            inputs:
+              connectionType: Kubernetes Service Connection
+              kubernetesServiceConnection: $(KubernetesConnectionName)
+              namespace: kube-system
+              command: upgrade
+              chartName: bitnami/external-dns
+              chartVersion: '6.5.6'
+              releaseName: external-dns
+              # We pass role ARN directly as annotation to Service Account, not with aws.roleArn parameter.
+              # Bitnami Helm chart for ExternalDNS does not apply aws.roleArn correctly - https://github.com/bitnami/charts/blob/master/bitnami/external-dns/templates/deployment.yaml
+              # The same approach is used by some other chart users - https://docs.papercups.io/aws#setup-the-external-dns-controller
+              overrideValues: |
+                "serviceAccount.annotations.eks.amazonaws.com/role-arn"=$(ExternalDNSRoleArn)
+                sources[0]=ingress
+                policy=sync
+                domainFilters[0]=$(DomainName)
+                registry=txt
+                provider=aws
+                aws.zoneType=public
+                txtOwnerId=/hostedzone/$(AwsHostedZoneId)
 
 - template: create-resources-template.yaml
   parameters:

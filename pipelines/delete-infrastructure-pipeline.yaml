@@ -33,16 +33,16 @@ stages:
       runOnce:
         deploy:
           steps:
-          # We need to give some time for ALB controller to delete provisioned resources.
+          # We need to give some time for controllers to delete provisioned resources.
           # Otherwise following steps for EKS clean-up will fail due to existing dependencies.
-          - powershell: Start-Sleep -Seconds 60
+          - powershell: Start-Sleep -Seconds 120
             displayName: Wait for Ingress Resources Deletion
 
           - task: CloudFormationDeleteStack@1
             displayName: 'Delete Stack: IAM Role for EKS ALB Controller'
             inputs:
               awsCredentials: $(AWSConnectionName)
-              stackName: eks-alb-controller-role
+              stackName: eks-iam-roles
 
           - task: CloudFormationDeleteStack@1
             displayName: 'Delete Stack: EKS Nodes Group'
