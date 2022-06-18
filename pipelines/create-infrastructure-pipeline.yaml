@@ -105,6 +105,8 @@ stages:
       runOnce:
         deploy:
           steps:
+          - checkout: self
+
           - task: CloudFormationCreateOrUpdateStack@1
             displayName: 'Create Stack: IAM Roles for EKS Cluster'
             inputs:
