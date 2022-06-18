@@ -182,7 +182,7 @@ stages:
               # Bitnami Helm chart for ExternalDNS does not apply aws.roleArn correctly - https://github.com/bitnami/charts/blob/master/bitnami/external-dns/templates/deployment.yaml
               # The same approach is used by some other chart users - https://docs.papercups.io/aws#setup-the-external-dns-controller
               overrideValues: |
-                "serviceAccount.annotations.eks.amazonaws.com/role-arn"=$(ExternalDNSRoleArn)
+                "serviceAccount.annotations.eks\.amazonaws\.com/role-arn"=$(ExternalDNSRoleArn)
                 sources[0]=ingress
                 policy=sync
                 domainFilters[0]=$(DomainName)
