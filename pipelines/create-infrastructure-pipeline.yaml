@@ -7,6 +7,7 @@ trigger: none
 variables:
   # Variables for connection names must be declared on pipeline level, otherwise pipeline will not start.
   AWSConnectionName: CodeFuller @ AWS
+  aws.region: us-east-1
   KubernetesConnectionName: AWS EKS Cluster
   # Additional variables that must befined for pipeline:
   # AzureDevopsApiToken: *****
@@ -25,7 +26,6 @@ stages:
       # Windows is required for AWSPowerShellModuleScript@1 task
       vmImage: vs2017-win2016
     variables:
-      aws.region: us-east-1
       sshKey: MusicFeed Key
     strategy:
       runOnce:
