@@ -44,3 +44,4 @@ stages:
               releaseName: musicfeed-ingress
               overrideValues: |
                 domainName=${{ parameters.domainName }}
+                certificateArn=$(AWS.CertificateArn)

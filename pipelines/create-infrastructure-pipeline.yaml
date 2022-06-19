@@ -13,6 +13,7 @@ variables:
   # DomainName: example.com
   # AzureDevops.ApiToken: *****
   # AWS.HostedZoneId: Z01055552B3KYP9ID3C6O
+  # AWS.CertificateArn: arn:aws:acm:us-east-1:194189790374:certificate/0f86795f-d8af-4c73-bc8d-b4af516fdc2c
 
 stages:
 - stage: CreateEKSClusterStage
