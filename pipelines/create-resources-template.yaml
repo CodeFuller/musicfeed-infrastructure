@@ -5,6 +5,9 @@ parameters:
 - name: envDisplayName
   type: string
 
+- name: domainName
+  type: string
+
 stages:
 - stage: CreateResourcesFor${{ parameters.envDisplayName }}
   displayName: Create Resources for ${{ parameters.envDisplayName }} Environment
@@ -29,11 +32,15 @@ stages:
               arguments: -f namespace-${{ parameters.envName }}.yaml
               outputFormat: none
 
-          - task: Kubernetes@1
+          - task: HelmDeploy@0
             displayName: Create Ingress
             inputs:
-              kubernetesServiceEndpoint: $(KubernetesConnectionName)
-              command: apply
+              connectionType: Kubernetes Service Connection
+              kubernetesServiceConnection: $(KubernetesConnectionName)
               namespace: musicfeed-${{ parameters.envName }}
-              arguments: -f ingress.yaml
-              outputFormat: none
+              command: upgrade
+              chartType: FilePath
+              chartPath: ./musicfeed-ingress
+              releaseName: musicfeed-ingress
+              overrideValues: |
+                domainName=${{ parameters.envName }}

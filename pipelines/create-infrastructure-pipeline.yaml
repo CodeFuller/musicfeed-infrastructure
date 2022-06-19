@@ -197,8 +197,10 @@ stages:
   parameters:
     envName: test
     envDisplayName: Test
+    domainName: musicfeed-test.codefuller.net
 
 - template: create-resources-template.yaml
   parameters:
     envName: prod
     envDisplayName: Production
+    domainName: musicfeed.codefuller.net
