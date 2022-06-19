@@ -10,9 +10,9 @@ variables:
   aws.region: us-east-1
   KubernetesConnectionName: AWS EKS Cluster
   # Additional variables that must befined for pipeline:
-  # AzureDevopsApiToken: *****
   # DomainName: example.com
-  # AwsHostedZoneId: Z01055552B3KYP9ID3C6O
+  # AzureDevops.ApiToken: *****
+  # AWS.HostedZoneId: Z01055552B3KYP9ID3C6O
 
 stages:
 - stage: CreateEKSClusterStage
@@ -81,7 +81,7 @@ stages:
               awsCredentials: $(AWSConnectionName)
               workingDirectory: ./pipelines
               filePath: ./pipelines/configure-eks-service-connection.ps1
-              arguments: '-PersonalToken $(AzureDevopsApiToken) -OrganizationUrl $(System.CollectionUri) -ProjectId $(System.TeamProjectId) -ProjectName "$(System.TeamProject)" -ClusterName "$(ClusterName)"'
+              arguments: '-PersonalToken $(AzureDevops.ApiToken) -OrganizationUrl $(System.CollectionUri) -ProjectId $(System.TeamProjectId) -ProjectName "$(System.TeamProject)" -ClusterName "$(ClusterName)"'
               failOnStderr: true
 
           - powershell: |
@@ -191,7 +191,7 @@ stages:
                 registry=txt
                 provider=aws
                 aws.zoneType=public
-                txtOwnerId=/hostedzone/$(AwsHostedZoneId)
+                txtOwnerId=/hostedzone/$(AWS.HostedZoneId)
 
 - template: create-resources-template.yaml
   parameters:
