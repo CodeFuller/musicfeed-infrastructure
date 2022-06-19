@@ -43,4 +43,4 @@ stages:
               chartPath: ./musicfeed-ingress
               releaseName: musicfeed-ingress
               overrideValues: |
-                domainName=${{ parameters.envName }}
+                domainName=${{ parameters.domainName }}
