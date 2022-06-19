@@ -21,11 +21,11 @@ stages:
           steps:
           - checkout: self
 
-          - task: Kubernetes@1
-            displayName: Delete Ingress
+          - task: HelmDeploy@0
+            displayName: Uninstall Ingress Chart
             inputs:
-              kubernetesServiceEndpoint: $(KubernetesConnectionName)
-              command: delete
+              connectionType: Kubernetes Service Connection
+              kubernetesServiceConnection: $(KubernetesConnectionName)
               namespace: musicfeed-${{ parameters.envName }}
-              arguments: -f ingress.yaml
-              outputFormat: none
+              command: uninstall
+              arguments: musicfeed-ingress
