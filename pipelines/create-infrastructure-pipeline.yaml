@@ -153,7 +153,7 @@ stages:
               #   1. Check whether the new version is avaialble at https://github.com/aws/eks-charts/blob/master/stable/aws-load-balancer-controller/Chart.yaml
               #   2. Check prerequisites section, version requirements and upgrade instructions at for EKS at https://github.com/aws/eks-charts/blob/master/stable/aws-load-balancer-controller/README.md#prerequisites
               #   3. Compare EKSLoadBalancerControllerPolicy with https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/main/docs/install/iam_policy.json
-              chartVersion: '1.2.0'
+              chartVersion: '1.4.2'
               releaseName: aws-load-balancer-controller
               overrideValues: |
                 clusterName=$(ClusterName)
