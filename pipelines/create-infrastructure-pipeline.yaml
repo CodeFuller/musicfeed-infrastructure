@@ -25,7 +25,7 @@ stages:
     pool:
       name: Azure Pipelines
       # Windows is required for AWSPowerShellModuleScript@1 task
-      vmImage: vs2017-win2016
+      vmImage: windows-latest
     variables:
       sshKey: MusicFeed Key
     strategy:
