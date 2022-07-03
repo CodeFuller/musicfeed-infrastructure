@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: musicfeed
@@ -12,12 +12,18 @@ spec:
   rules:
     - http:
         paths:
-          - path: /diagnostics/*
+          - path: /diagnostics/
+            pathType: Prefix
             backend:
-              serviceName: diagnostics-service
-              servicePort: 80
+              service:
+                name: diagnostics-service
+                port:
+                  number: 80
 
-          - path: /api/*
+          - path: /api/
+            pathType: Prefix
             backend:
-              serviceName: api-service
-              servicePort: 80
+              service:
+                name: api-service
+                port:
+                  number: 80
