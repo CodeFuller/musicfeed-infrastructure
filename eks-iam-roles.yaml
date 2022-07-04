@@ -45,8 +45,7 @@ Resources:
       PolicyName: EKSLoadBalancerControllerPolicy
       Roles:
         - !Ref EKSLoadBalancerControllerRole
-      PolicyDocument:
-        - |
+      PolicyDocument: |
           {
               "Version": "2012-10-17",
               "Statement": [
