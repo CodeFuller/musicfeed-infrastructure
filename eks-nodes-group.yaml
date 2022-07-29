@@ -83,11 +83,15 @@ Resources:
       InstanceTypes:
         # https://stackoverflow.com/questions/57970896/
         # The following document lists maximum numbers of pods for each instance type: https://github.com/awslabs/amazon-eks-ami/blob/master/files/eni-max-pods.txt
-        # It is 11 pods for t3.small instance, 22 total for 2 nodes.
-        # 8 pods are occupied by system (2 x (ALB, node, coredns, kube-proxy))
-        # Rest number for service pods: 14
-        # Max number of services (2 pods in replica, 2 environments): 14 / 4 = 3
-        - t3.small
+        #
+        # Calculation of required pods number:
+        # 10 pods are occupied by system: (aws-load-balancer-controller, aws-node, coredns, kube-proxy) x 2, external-dns, kubernetes-dashboard.
+        # 16 pods are occupied by services: (public-api, diagnostics, updates, identity) x 2 pods in replica x 2 environments.
+        # 1 spare pods for deployment rollout.
+        # Result: (10 + 16 + 1) / 2 nodes = 14+ pods per node.
+        #
+        # Prices for each instance type: https://aws.amazon.com/ec2/pricing/on-demand/
+        - t4g.medium
       ScalingConfig:
         DesiredSize: 2
         MinSize: 2
