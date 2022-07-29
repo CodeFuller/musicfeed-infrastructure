@@ -80,6 +80,7 @@ Resources:
     Properties:
       ClusterName: !Ref ClusterName
       NodeRole: !GetAtt EKSNodeRole.Arn
+      AmiType: AL2_ARM_64
       InstanceTypes:
         # https://stackoverflow.com/questions/57970896/
         # The following document lists maximum numbers of pods for each instance type: https://github.com/awslabs/amazon-eks-ami/blob/master/files/eni-max-pods.txt
