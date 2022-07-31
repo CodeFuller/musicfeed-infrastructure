@@ -33,6 +33,14 @@ stages:
       runOnce:
         deploy:
           steps:
+          - task: HelmDeploy@0
+            displayName: Uninstall Kubernetes Dashboard
+            inputs:
+              connectionType: Kubernetes Service Connection
+              kubernetesServiceConnection: $(KubernetesConnectionName)
+              command: uninstall
+              arguments: kubernetes-dashboard
+
           # We need to give some time for controllers to delete provisioned resources.
           # Otherwise following steps for EKS clean-up will fail due to existing dependencies.
           - powershell: Start-Sleep -Seconds 120
