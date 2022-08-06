@@ -218,7 +218,7 @@ stages:
               targetType: 'inline'
               script: |
                 Write-Host 'Configure kubeconfig: aws eks --region $(GlobalConfig.AWS.Region) update-kubeconfig --name $(ClusterName)'
-                Write-Host 'Get secret for kubernetes-dashboard: kubectl get secret $(kubectl get sa/pipelines-robot -o jsonpath="{.secrets[0].name}") -o go-template="{{.data.token | base64decode}}'
+                Write-Host 'Get secret for Kubernetes Dashboard: kubectl get secret $(kubectl get sa/pipelines-robot -o jsonpath="{.secrets[0].name}") -o go-template="{{.data.token | base64decode}}"'
 
 - template: create-resources-template.yaml
   parameters:
