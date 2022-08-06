@@ -1,7 +1,6 @@
 parameters:
 - name: envName
   type: string
-
 - name: envDisplayName
   type: string
 
@@ -21,11 +20,10 @@ stages:
           steps:
           - checkout: self
 
-          - task: HelmDeploy@0
-            displayName: Uninstall Ingress Chart
+          # We delete namespace so that ALB controller could delete load balancers provisioned for Ingress resources.
+          - task: Kubernetes@1
+            displayName: Delete Namespace
             inputs:
-              connectionType: Kubernetes Service Connection
-              kubernetesServiceConnection: $(KubernetesConnectionName)
-              namespace: musicfeed-${{ parameters.envName }}
-              command: uninstall
-              arguments: musicfeed-ingress
+              kubernetesServiceEndpoint: $(KubernetesConnectionName)
+              command: delete
+              arguments: -f namespace-${{ parameters.envName }}.yaml

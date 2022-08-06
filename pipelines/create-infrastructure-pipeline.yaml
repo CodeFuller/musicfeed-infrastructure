@@ -5,15 +5,13 @@ name: $(Build.BuildId)
 trigger: none
 
 variables:
-  # Variables for connection names must be declared on pipeline level, otherwise pipeline will not start.
+  - group: MusicFeedVariables
   AWSConnectionName: CodeFuller @ AWS
-  aws.region: us-east-1
+  aws.region: $(GlobalConfig.AWS.Region)
   KubernetesConnectionName: AWS EKS Cluster
   # Additional variables that must befined for pipeline:
-  # DomainName: example.com
   # AzureDevops.ApiToken: *****
   # AWS.HostedZoneId: Z01055552B3KYP9ID3C6O
-  # AWS.CertificateArn: arn:aws:acm:us-east-1:194189790374:certificate/0f86795f-d8af-4c73-bc8d-b4af516fdc2c
 
 stages:
 - stage: CreateEKSClusterStage
@@ -133,14 +131,6 @@ stages:
               outputFormat: none
 
           - task: HelmDeploy@0
-            displayName: Add ingress-nginx Repository
-            inputs:
-              connectionType: Kubernetes Service Connection
-              kubernetesServiceConnection: $(KubernetesConnectionName)
-              command: repo
-              arguments: add ingress-nginx https://kubernetes.github.io/ingress-nginx
-
-          - task: HelmDeploy@0
             displayName: Add eks-charts Repository
             inputs:
               connectionType: Kubernetes Service Connection
@@ -196,7 +186,7 @@ stages:
                 "serviceAccount.annotations.eks\.amazonaws\.com/role-arn"=$(ExternalDNSRoleArn)
                 sources[0]=ingress
                 policy=sync
-                domainFilters[0]=$(DomainName)
+                domainFilters[0]=$(GlobalConfig.DomainName)
                 registry=txt
                 provider=aws
                 aws.zoneType=public
@@ -213,17 +203,15 @@ stages:
               releaseName: kubernetes-dashboard
               arguments: --dependency-update
               overrideValues: |
-                domainName=kubernetes-dashboard.$(DomainName)
-                certificateArn=$(AWS.CertificateArn)
+                domainName=kubernetes-dashboard.$(GlobalConfig.DomainName)
+                certificateArn=$(GlobalConfig.AWS.CertificateArn)
 
 - template: create-resources-template.yaml
   parameters:
     envName: test
     envDisplayName: Test
-    domainName: musicfeed-test.$(DomainName)
 
 - template: create-resources-template.yaml
   parameters:
     envName: prod
     envDisplayName: Production
-    domainName: musicfeed.$(DomainName)

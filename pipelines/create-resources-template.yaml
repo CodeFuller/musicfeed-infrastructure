@@ -1,11 +1,7 @@
 parameters:
 - name: envName
   type: string
-
 - name: envDisplayName
-  type: string
-
-- name: domainName
   type: string
 
 stages:
@@ -31,17 +27,3 @@ stages:
               command: apply
               arguments: -f namespace-${{ parameters.envName }}.yaml
               outputFormat: none
-
-          - task: HelmDeploy@0
-            displayName: Install Ingress Chart
-            inputs:
-              connectionType: Kubernetes Service Connection
-              kubernetesServiceConnection: $(KubernetesConnectionName)
-              namespace: musicfeed-${{ parameters.envName }}
-              command: upgrade
-              chartType: FilePath
-              chartPath: ./musicfeed-ingress
-              releaseName: musicfeed-ingress
-              overrideValues: |
-                domainName=${{ parameters.domainName }}
-                certificateArn=$(AWS.CertificateArn)
