@@ -6,9 +6,15 @@ trigger: none
 
 variables:
   - group: MusicFeedVariables
-  AWSConnectionName: CodeFuller @ AWS
-  aws.region: $(GlobalConfig.AWS.Region)
-  KubernetesConnectionName: AWS EKS Cluster
+  - name: AWSConnectionName
+    value: CodeFuller @ AWS
+    readonly: true
+  - name: aws.region
+    value: $(GlobalConfig.AWS.Region)
+    readonly: true
+  - name: KubernetesConnectionName
+    value: AWS EKS Cluster
+    readonly: true
   # Additional variables that must befined for pipeline:
   # AzureDevops.ApiToken: *****
   # AWS.HostedZoneId: Z01055552B3KYP9ID3C6O
