@@ -19,6 +19,7 @@ stages:
     strategy:
       runOnce:
         deploy:
+          steps:
           - checkout: self
 
           # We delete namespace so that ALB controller could delete load balancers provisioned for Ingress resources.
