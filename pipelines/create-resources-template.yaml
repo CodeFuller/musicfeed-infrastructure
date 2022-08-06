@@ -20,10 +20,12 @@ stages:
       runOnce:
         deploy:
           steps:
+          - checkout: self
+
           - task: Kubernetes@1
             displayName: Create Namespace
             inputs:
               kubernetesServiceEndpoint: $(KubernetesConnectionName)
-              command: create
-              arguments: namespace $(GlobalConfig.Kubernetes.Namespace) --dry-run=client -o yaml | kubectl apply -f -
+              command: apply
+              arguments: -f namespace-${{ parameters.envName }}.yaml
               outputFormat: none
