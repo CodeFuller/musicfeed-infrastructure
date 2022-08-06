@@ -212,6 +212,14 @@ stages:
                 domainName=kubernetes-dashboard.$(GlobalConfig.DomainName)
                 certificateArn=$(GlobalConfig.AWS.CertificateArn)
 
+          - task: PowerShell@2
+            displayName: Dump Cheat Sheet
+            inputs:
+              targetType: 'inline'
+              script: |
+                Write-Host 'Configure kubeconfig: aws eks --region $(GlobalConfig.AWS.Region) update-kubeconfig --name $(ClusterName)'
+                Write-Host 'Get secret for kubernetes-dashboard: kubectl get secret $(kubectl get sa/pipelines-robot -o jsonpath="{.secrets[0].name}") -o go-template="{{.data.token | base64decode}}'
+
 - template: create-resources-template.yaml
   parameters:
     envName: test
