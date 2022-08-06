@@ -14,16 +14,15 @@ stages:
   - deployment: DeleteResourcesJob
     displayName: Delete Resources for ${{ parameters.envDisplayName }} Environment
     environment: ${{ parameters.envName }}
+    variables:
+      - group: MusicFeedVariables.${{ parameters.EnvName }}
     strategy:
       runOnce:
         deploy:
-          steps:
-          - checkout: self
-
           # We delete namespace so that ALB controller could delete load balancers provisioned for Ingress resources.
           - task: Kubernetes@1
             displayName: Delete Namespace
             inputs:
               kubernetesServiceEndpoint: $(KubernetesConnectionName)
               command: delete
-              arguments: -f namespace-${{ parameters.envName }}.yaml
+              arguments: namespace $(GlobalConfig.Kubernetes.Namespace)

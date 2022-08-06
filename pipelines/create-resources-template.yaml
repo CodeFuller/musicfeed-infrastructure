@@ -14,16 +14,16 @@ stages:
   - deployment: CreateResourcesJob
     displayName: Create Resources for ${{ parameters.envDisplayName }} Environment
     environment: ${{ parameters.envName }}
+    variables:
+      - group: MusicFeedVariables.${{ parameters.EnvName }}
     strategy:
       runOnce:
         deploy:
           steps:
-          - checkout: self
-
           - task: Kubernetes@1
             displayName: Create Namespace
             inputs:
               kubernetesServiceEndpoint: $(KubernetesConnectionName)
-              command: apply
-              arguments: -f namespace-${{ parameters.envName }}.yaml
+              command: create
+              arguments: namespace $(GlobalConfig.Kubernetes.Namespace)
               outputFormat: none
