@@ -26,3 +26,4 @@ stages:
               kubernetesServiceEndpoint: $(KubernetesConnectionName)
               command: create
               arguments: namespace $(GlobalConfig.Kubernetes.Namespace) --dry-run=client -o yaml | kubectl apply -f -
+              outputFormat: none
