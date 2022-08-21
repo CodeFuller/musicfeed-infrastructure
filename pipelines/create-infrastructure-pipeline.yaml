@@ -91,9 +91,11 @@ stages:
 
           - powershell: |
               Write-Host "##vso[task.setvariable variable=ClusterName;isOutput=true]$(ClusterName)"
+              Write-Host "##vso[task.setvariable variable=VpcId;isOutput=true]$(VpcId)"
+              Write-Host "##vso[task.setvariable variable=PublicSubnetId;isOutput=true]$(PublicSubnetId)"
               Write-Host "##vso[task.setvariable variable=OIDCProviderId;isOutput=true]$(OIDCProviderId)"
             name: SetOutputVariables
-            displayName: 'Set Output Variables'
+            displayName: Set Output Variables
 
 - stage: ConfigureEKSClusterStage
   displayName: Configure EKS Cluster
@@ -259,6 +261,11 @@ stages:
               captureStackOutputs: asVariables
               captureAsSecuredVars: false
 
+          - powershell: |
+              Write-Host "##vso[task.setvariable variable=DBServerPublicIP;isOutput=true]$(PublicIP)"
+            name: SetOutputVariables
+            displayName: Set Output Variables
+
 # We use separate stage for dumping cheat sheet for several reasons:
 # 1. It is easier to navigate to the cheat sheet. Otherwise, you have to pick correct stage, job & task.
 # 2. Below CreateResources stages should depend on ConfigureEKSClusterStage.
@@ -271,11 +278,11 @@ stages:
     - ConfigureEKSClusterStage
     - CreateDBServerStage
   jobs:
-    variables: 
-      ClusterName: $[ stageDependencies.CreateEKSClusterStage.CreateEKSClusterJob.outputs['CreateEKSClusterJob.SetOutputVariables.ClusterName'] ]
-      PublicIP: $[ stageDependencies.CreateDBServerStage.CreateDBServerJob.outputs['CreateDBServerJob.SetOutputVariables.PublicIP'] ]
   - job: DumpCheatSheetJob
     displayName: Dump Cheat Sheet
+    variables:
+      ClusterName: $[ stageDependencies.CreateEKSClusterStage.CreateEKSClusterJob.outputs['CreateEKSClusterJob.SetOutputVariables.ClusterName'] ]
+      DBServerPublicIP: $[ stageDependencies.CreateDBServerStage.CreateDBServerJob.outputs['CreateDBServerJob.SetOutputVariables.DBServerPublicIP'] ]
     steps:
     - task: PowerShell@2
       displayName: Dump Cheat Sheet
@@ -284,7 +291,7 @@ stages:
         script: |
           Write-Host 'Configure kubeconfig: aws eks --region $(GlobalConfig.AWS.Region) update-kubeconfig --name $(ClusterName)'
           Write-Host 'Get secret for Kubernetes Dashboard: kubectl get secret $(kubectl get sa/pipelines-robot -o jsonpath="{.secrets[0].name}") -o go-template="{{.data.token | base64decode}}"'
-          Write-Host 'ssh to DB Server: ssh -i "Music Feed DB Server.pem" ubuntu@$(PublicIP)'
+          Write-Host 'ssh to DB Server: ssh -i "Music Feed DB Server.pem" ubuntu@$(DBServerPublicIP)'
 
 - template: create-resources-template.yaml
   parameters:
