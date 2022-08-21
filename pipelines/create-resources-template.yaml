@@ -7,9 +7,6 @@ parameters:
 stages:
 - stage: CreateResourcesFor${{ parameters.envDisplayName }}
   displayName: Create Resources for ${{ parameters.envDisplayName }} Environment
-  pool:
-    name: Azure Pipelines
-    vmImage: ubuntu-latest
   jobs:
   - deployment: CreateResourcesJob
     displayName: Create Resources for ${{ parameters.envDisplayName }} Environment

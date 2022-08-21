@@ -4,6 +4,9 @@ name: $(Build.BuildId)
 # We need to prevent automatic launches to avoid unwanted expenses.
 trigger: none
 
+pool:
+  vmImage: ubuntu-latest
+
 variables:
   - group: MusicFeedVariables
   - name: AWSConnectionName
@@ -27,7 +30,6 @@ stages:
     displayName: Create EKS Cluster
     environment: aws
     pool:
-      name: Azure Pipelines
       # Windows is required for AWSPowerShellModuleScript@1 task
       vmImage: windows-latest
     variables:
@@ -104,10 +106,7 @@ stages:
   - deployment: CreateEKSClusterJob
     displayName: Configure EKS Cluster
     environment: aws
-    pool:
-      name: Azure Pipelines
-      vmImage: ubuntu-latest
-    variables: 
+    variables:
       ClusterName: $[ stageDependencies.CreateEKSClusterStage.CreateEKSClusterJob.outputs['CreateEKSClusterJob.SetOutputVariables.ClusterName'] ]
       OIDCProviderId: $[ stageDependencies.CreateEKSClusterStage.CreateEKSClusterJob.outputs['CreateEKSClusterJob.SetOutputVariables.OIDCProviderId'] ]
     strategy:
@@ -221,10 +220,7 @@ stages:
   - deployment: CreateDBServerJob
     displayName: Create DB Server
     environment: aws
-    pool:
-      name: Azure Pipelines
-      vmImage: ubuntu-latest
-    variables: 
+    variables:
       VpcId: $[ stageDependencies.CreateEKSClusterStage.CreateEKSClusterJob.outputs['CreateEKSClusterJob.SetOutputVariables.VpcId'] ]
       PublicSubnetId: $[ stageDependencies.CreateEKSClusterStage.CreateEKSClusterJob.outputs['CreateEKSClusterJob.SetOutputVariables.PublicSubnetId'] ]
     strategy:

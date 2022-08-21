@@ -7,9 +7,6 @@ parameters:
 stages:
 - stage: DeleteResourcesFor${{ parameters.envDisplayName }}
   displayName: Delete Resources for ${{ parameters.envDisplayName }} Environment
-  pool:
-    name: Azure Pipelines
-    vmImage: ubuntu-latest
   jobs:
   - deployment: DeleteResourcesJob
     displayName: Delete Resources for ${{ parameters.envDisplayName }} Environment

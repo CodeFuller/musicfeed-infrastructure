@@ -2,6 +2,9 @@ name: $(Build.BuildId)
 
 trigger: none
 
+pool:
+  vmImage: ubuntu-latest
+
 variables:
   - group: MusicFeedVariables
   # Variables for connection names must be declared on pipeline level, otherwise pipeline will not start.
@@ -32,9 +35,6 @@ stages:
   - deployment: DeleteDBServerJob
     displayName: Delete DB Server
     environment: aws
-    pool:
-      name: Azure Pipelines
-      vmImage: ubuntu-latest
     strategy:
       runOnce:
         deploy:
@@ -52,9 +52,6 @@ stages:
   - deployment: DeleteClusterJob
     displayName: Delete EKS Cluster
     environment: aws
-    pool:
-      name: Azure Pipelines
-      vmImage: ubuntu-latest
     strategy:
       runOnce:
         deploy:
