@@ -3,9 +3,17 @@ name: $(Build.BuildId)
 trigger: none
 
 variables:
+  - group: MusicFeedVariables
   # Variables for connection names must be declared on pipeline level, otherwise pipeline will not start.
-  AWSConnectionName: CodeFuller @ AWS
-  KubernetesConnectionName: AWS EKS Cluster
+  - name: AWSConnectionName
+    value: CodeFuller @ AWS
+    readonly: true
+  - name: aws.region
+    value: $(GlobalConfig.AWS.Region)
+    readonly: true
+  - name: KubernetesConnectionName
+    value: AWS EKS Cluster
+    readonly: true
 
 stages:
 - template: delete-resources-template.yaml
@@ -18,6 +26,26 @@ stages:
     envName: prod
     envDisplayName: Production
 
+- stage: DeleteDBServerStage
+  displayName: Delete DB Server
+  jobs:
+  - deployment: DeleteDBServerJob
+    displayName: Delete DB Server
+    environment: aws
+    pool:
+      name: Azure Pipelines
+      vmImage: ubuntu-latest
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          # Stack postgres-volume is not deleted because the volume contains durable data.
+          - task: CloudFormationDeleteStack@1
+            displayName: 'Delete Stack: DB Server'
+            inputs:
+              awsCredentials: $(AWSConnectionName)
+              stackName: db-server
+
 - stage: DeleteClusterStage
   displayName: Delete EKS Cluster
   jobs:
@@ -27,8 +55,6 @@ stages:
     pool:
       name: Azure Pipelines
       vmImage: ubuntu-latest
-    variables:
-      aws.region: us-east-1
     strategy:
       runOnce:
         deploy:

@@ -1,0 +1,70 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Database Server
+
+Parameters:
+  VpcId:
+    Type: String
+    Description: VPC Id
+
+  SubnetId:
+    Type: String
+    Description: Subnet Id
+
+  PostgresVolumeId:
+    Type: String
+    Description: Postgres Volume Id
+
+Resources:
+  DBServer:
+    Type: AWS::EC2::Instance
+    Properties:
+      AvailabilityZone:
+        Fn::Select:
+        - '0'
+        - Fn::GetAZs:
+            Ref: AWS::Region
+      ImageId: ami-0543abe103881c463
+      InstanceType: t4g.medium
+      KeyName: Music Feed DB Server
+      EbsOptimized: true
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            Encrypted: false
+            VolumeSize: 10
+            VolumeType: gp2
+            DeleteOnTermination: true
+      Volumes:
+        - Device: /dev/sda2
+          VolumeId: !Ref PostgresVolumeId
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          GroupSet:
+            - !Ref DBServerSecurityGroup
+          # We use public subnet because Azure build agent accesses the database for applying DB migrations.
+          SubnetId: !Ref SubnetId
+
+  DBServerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: DBServerSecurityGroup
+      GroupDescription: Security group for DBServer
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - CidrIp: "0.0.0.0/0"
+          IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+        - CidrIp: "0.0.0.0/0"
+          IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+      SecurityGroupEgress: 
+        - CidrIp: "0.0.0.0/0"
+          IpProtocol: -1
+
+Outputs: 
+  PublicIP:
+    Description: Public IP of created DB server
+    Value: !GetAtt DBServer.PublicIp

@@ -1,0 +1,53 @@
+Created from ami-070650c005cce4203 (Ubuntu Server 22.04 LTS (HVM), SSD Volume Type)
+
+Applied following configuration:
+
+# Configure firewall - https://www.cyberciti.biz/faq/how-to-configure-firewall-with-ufw-on-ubuntu-20-04-lts/
+sudo ufw allow ssh
+sudo ufw allow 5432/tcp comment 'Allow PostgreSQL Connections'
+sudo ufw enable
+
+# Install Postgres
+# https://www.digitalocean.com/community/tutorials/how-to-install-postgresql-on-ubuntu-20-04-quickstart
+# https://www.cherryservers.com/blog/how-to-install-and-setup-postgresql-server-on-ubuntu-20-04
+sudo apt update
+sudo apt install postgresql postgresql-contrib
+
+# Allow remote access to Postgres - https://blog.logrocket.com/setting-up-a-remote-postgres-database-server-on-ubuntu-18-04/
+sudo nano /etc/postgresql/14/main/postgresql.conf
+Replace line
+#listen_addresses = 'localhost'
+with
+listen_addresses = '*'
+
+sudo nano /etc/postgresql/14/main/pg_hba.conf
+Replace line
+host    all             all             127.0.0.1/32            scram-sha-256
+with
+host    all             all             0.0.0.0/0               scram-sha-256
+
+# Configure Postgres data directory to Postgres volume
+# If volume was just created, format the disk:
+sudo mkfs -t ext4 /dev/nvme1n1
+
+sudo systemctl stop postgresql
+
+sudo mkdir /mnt/postgres-data
+sudo nano /etc/fstab
+# Add entry for postgres volume:
+/dev/nvme1n1    /mnt/postgres-data      ext4    discard,errors=remount-ro       0       1
+
+sudo nano /etc/postgresql/14/main/postgresql.conf
+Replace line
+data_directory = '/var/lib/postgresql/14/main'          # use data in another directory
+with
+data_directory = '/mnt/postgres-data/postgresql/14/main'          # use data in another directory
+
+sudo mount -a
+sudo mv /var/lib/postgresql /mnt/postgres-data/
+
+sudo systemctl restart postgresql
+
+# Login under postgres user and set password for it
+sudo -u postgres psql
+ALTER USER postgres WITH PASSWORD '<Your Password Here>';

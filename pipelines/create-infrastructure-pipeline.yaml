@@ -220,6 +220,53 @@ stages:
                 Write-Host 'Configure kubeconfig: aws eks --region $(GlobalConfig.AWS.Region) update-kubeconfig --name $(ClusterName)'
                 Write-Host 'Get secret for Kubernetes Dashboard: kubectl get secret $(kubectl get sa/pipelines-robot -o jsonpath="{.secrets[0].name}") -o go-template="{{.data.token | base64decode}}"'
 
+- stage: CreateDBServerStage
+  displayName: Create DB Server
+  dependsOn: CreateEKSClusterStage
+  jobs:
+  - deployment: CreateDBServerJob
+    displayName: Create DB Server
+    environment: aws
+    pool:
+      name: Azure Pipelines
+      vmImage: ubuntu-latest
+    variables: 
+      VpcId: $[ stageDependencies.CreateEKSClusterStage.CreateEKSClusterJob.outputs['CreateEKSClusterJob.SetOutputVariables.VpcId'] ]
+      PublicSubnetId: $[ stageDependencies.CreateEKSClusterStage.CreateEKSClusterJob.outputs['CreateEKSClusterJob.SetOutputVariables.PublicSubnetId'] ]
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - checkout: self
+
+          - task: CloudFormationCreateOrUpdateStack@1
+            displayName: 'Create Stack: Postgres Volume'
+            inputs:
+              awsCredentials: $(AWSConnectionName)
+              stackName: postgres-volume
+              templateSource: file
+              templateFile: db-server/stack-postgres-volume.yaml
+              captureStackOutputs: asVariables
+              captureAsSecuredVars: false
+
+          - task: CloudFormationCreateOrUpdateStack@1
+            displayName: 'Create Stack: DB Server'
+            inputs:
+              awsCredentials: $(AWSConnectionName)
+              stackName: db-server
+              templateSource: file
+              templateFile: db-server/stack-db-server.yml
+              templateParametersSource: inline
+              templateParameters: |
+                - ParameterKey: VpcId
+                  ParameterValue: $(VpcId)
+                - ParameterKey: SubnetId
+                  ParameterValue: $(PublicSubnetId)
+                - ParameterKey: PostgresVolumeId
+                  ParameterValue: $(PostgresVolumeId)
+              captureStackOutputs: asVariables
+              captureAsSecuredVars: false
+
 - template: create-resources-template.yaml
   parameters:
     envName: test

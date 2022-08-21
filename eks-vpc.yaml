@@ -277,6 +277,10 @@ Outputs:
     Description: Subnets IDs in the VPC
     Value: !Join [ ",", [ !Ref PublicSubnet01, !Ref PublicSubnet02, !Ref PrivateSubnet01, !Ref PrivateSubnet02 ] ]
 
+  PublicSubnetId:
+    Description: Public subnet ID
+    Value: !Ref PublicSubnet01
+
   SecurityGroups:
     Description: Security group for the cluster control plane communication with worker nodes
     Value: !Join [ ",", [ !Ref ControlPlaneSecurityGroup ] ]
