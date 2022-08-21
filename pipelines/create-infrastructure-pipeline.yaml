@@ -212,14 +212,6 @@ stages:
                 domainName=kubernetes-dashboard.$(GlobalConfig.DomainName)
                 certificateArn=$(GlobalConfig.AWS.CertificateArn)
 
-          - task: PowerShell@2
-            displayName: Dump Cheat Sheet
-            inputs:
-              targetType: 'inline'
-              script: |
-                Write-Host 'Configure kubeconfig: aws eks --region $(GlobalConfig.AWS.Region) update-kubeconfig --name $(ClusterName)'
-                Write-Host 'Get secret for Kubernetes Dashboard: kubectl get secret $(kubectl get sa/pipelines-robot -o jsonpath="{.secrets[0].name}") -o go-template="{{.data.token | base64decode}}"'
-
 - stage: CreateDBServerStage
   displayName: Create DB Server
   dependsOn: CreateEKSClusterStage
@@ -266,6 +258,33 @@ stages:
                   ParameterValue: $(PostgresVolumeId)
               captureStackOutputs: asVariables
               captureAsSecuredVars: false
+
+# We use separate stage for dumping cheat sheet for several reasons:
+# 1. It is easier to navigate to the cheat sheet. Otherwise, you have to pick correct stage, job & task.
+# 2. Below CreateResources stages should depend on ConfigureEKSClusterStage.
+# If we omit DumpCheatSheetStage, we should add explicit dependency of CreateResources from ConfigureEKSClusterStage.
+# This is not trivial, because we have to abandon stage-level templates and use job-level templates.
+- stage: DumpCheatSheetStage
+  displayName: Dump Cheat Sheet
+  dependsOn:
+    - CreateEKSClusterStage
+    - ConfigureEKSClusterStage
+    - CreateDBServerStage
+  jobs:
+    variables: 
+      ClusterName: $[ stageDependencies.CreateEKSClusterStage.CreateEKSClusterJob.outputs['CreateEKSClusterJob.SetOutputVariables.ClusterName'] ]
+      PublicIP: $[ stageDependencies.CreateDBServerStage.CreateDBServerJob.outputs['CreateDBServerJob.SetOutputVariables.PublicIP'] ]
+  - job: DumpCheatSheetJob
+    displayName: Dump Cheat Sheet
+    steps:
+    - task: PowerShell@2
+      displayName: Dump Cheat Sheet
+      inputs:
+        targetType: 'inline'
+        script: |
+          Write-Host 'Configure kubeconfig: aws eks --region $(GlobalConfig.AWS.Region) update-kubeconfig --name $(ClusterName)'
+          Write-Host 'Get secret for Kubernetes Dashboard: kubectl get secret $(kubectl get sa/pipelines-robot -o jsonpath="{.secrets[0].name}") -o go-template="{{.data.token | base64decode}}"'
+          Write-Host 'ssh to DB Server: ssh -i "Music Feed DB Server.pem" ubuntu@$(PublicIP)'
 
 - template: create-resources-template.yaml
   parameters:
