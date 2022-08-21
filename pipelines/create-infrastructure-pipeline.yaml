@@ -240,12 +240,22 @@ stages:
               captureAsSecuredVars: false
 
           - task: CloudFormationCreateOrUpdateStack@1
+            displayName: 'Create Stack: Elastic IP'
+            inputs:
+              awsCredentials: $(AWSConnectionName)
+              stackName: db-server-eip
+              templateSource: file
+              templateFile: db-server/stack-db-server-eip.yaml
+              captureStackOutputs: asVariables
+              captureAsSecuredVars: false
+
+          - task: CloudFormationCreateOrUpdateStack@1
             displayName: 'Create Stack: DB Server'
             inputs:
               awsCredentials: $(AWSConnectionName)
               stackName: db-server
               templateSource: file
-              templateFile: db-server/stack-db-server.yml
+              templateFile: db-server/stack-db-server.yaml
               templateParametersSource: inline
               templateParameters: |
                 - ParameterKey: VpcId
@@ -254,11 +264,13 @@ stages:
                   ParameterValue: $(PublicSubnetId)
                 - ParameterKey: PostgresVolumeId
                   ParameterValue: $(PostgresVolumeId)
+                - ParameterKey: EIPAllocationId
+                  ParameterValue: $(AllocationId)
               captureStackOutputs: asVariables
               captureAsSecuredVars: false
 
           - powershell: |
-              Write-Host "##vso[task.setvariable variable=DBServerPublicIP;isOutput=true]$(PublicIP)"
+              Write-Host "##vso[task.setvariable variable=DBServerPublicIP;isOutput=true]$(IPAddress)"
             name: SetOutputVariables
             displayName: Set Output Variables
 

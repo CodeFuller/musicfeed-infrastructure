@@ -29,6 +29,9 @@ stages:
     envName: prod
     envDisplayName: Production
 
+# The following stacks produced by create-infrastructure-pipeline are not deleted:
+# db-server-eip - we need static IP address for unchanged connection strings.
+# postgres-volume - the volume contains durable data.
 - stage: DeleteDBServerStage
   displayName: Delete DB Server
   jobs:
@@ -39,7 +42,6 @@ stages:
       runOnce:
         deploy:
           steps:
-          # Stack postgres-volume is not deleted because the volume contains durable data.
           - task: CloudFormationDeleteStack@1
             displayName: 'Delete Stack: DB Server'
             inputs:

@@ -14,6 +14,10 @@ Parameters:
     Type: String
     Description: Postgres Volume Id
 
+  EIPAllocationId:
+    Type: String
+    Description: EIP Allocation Id
+
 Resources:
   DBServer:
     Type: AWS::EC2::Instance
@@ -38,12 +42,23 @@ Resources:
         - Device: /dev/sda2
           VolumeId: !Ref PostgresVolumeId
       NetworkInterfaces:
-        - AssociatePublicIpAddress: true
-          DeviceIndex: 0
-          GroupSet:
-            - !Ref DBServerSecurityGroup
-          # We use public subnet because Azure build agent accesses the database for applying DB migrations.
-          SubnetId: !Ref SubnetId
+      - NetworkInterfaceId:
+          Ref: DBServerNetworkInterface
+        DeviceIndex: 0
+
+  DBServerNetworkInterface:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      GroupSet:
+        - !Ref DBServerSecurityGroup
+      # We use public subnet because Azure build agent accesses the database for applying DB migrations.
+      SubnetId: !Ref SubnetId
+
+  DBServerEIPAssociation:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      AllocationId: !Ref EIPAllocationId
+      NetworkInterfaceId: !Ref DBServerNetworkInterface
 
   DBServerSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -63,8 +78,3 @@ Resources:
       SecurityGroupEgress: 
         - CidrIp: "0.0.0.0/0"
           IpProtocol: -1
-
-Outputs: 
-  PublicIP:
-    Description: Public IP of created DB server
-    Value: !GetAtt DBServer.PublicIp

@@ -1,0 +1,17 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Elastic IP for Database Server
+
+Resources:
+  DBServerEIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+Outputs: 
+  IPAddress:
+    Description: IP Address
+    Value: !Ref DBServerEIP
+
+  AllocationId:
+    Description: Allocation id
+    Value: !GetAtt DBServerEIP.AllocationId
