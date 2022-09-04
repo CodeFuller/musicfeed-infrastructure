@@ -1,0 +1,33 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true
+
+[*.cs]
+indent_style = tab
+indent_size = 4
+
+[*.{csproj,xml,props,ruleset,resx}]
+indent_style = space
+indent_size = 2
+
+[*.xaml]
+indent_style = space
+indent_size = 4
+
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+
+[*.{js,jsx,ts,tsx,json}]
+indent_style = space
+indent_size = 2
+
+[*.{ps1,psm1}]
+indent_style = space
+indent_size = 4
+
+[*.cshtml.cs]
+dotnet_diagnostic.SA1649.severity = none
